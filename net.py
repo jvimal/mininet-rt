@@ -16,7 +16,7 @@ import os, sys
 
 class Mininet:
 
-  def __init__(self, HostClass, SwitchClass):
+  def __init__(self, HostClass, SwitchClass, topo):
     if os.getuid() != 0:
       print 'Please run as root.'
       sys.exit(-1)
@@ -31,6 +31,8 @@ class Mininet:
     self.switches = []
     self.controllers = []
     self.name_to_node = {}
+
+    self.build_topology(topo)
 
   def add_host(self, name=None):
     """ Adds a host to the network with given properties """
@@ -73,15 +75,44 @@ class Mininet:
     # nothing to be done as of now
     pass
 
-  def create_links(self):
-    pass
-
-  def destroy_links(self):
-    pass
-
   def build_topology(self, topo):
-    pass
-  
+    self.ids_to_nodes = {}
+    self.topo = topo
+
+    for n in topo.nodes:
+      if n.is_switch:
+        s = self.add_switch()
+        self.ids_to_nodes[n.id] = s
+      else:
+        h = self.add_host()
+        self.ids_to_nodes[n.id] = h
+
+    def create_link(u, v):
+      su = self.ids_to_nodes[u.id]
+      sv = self.ids_to_nodes[v.id]
+      if u.is_switch and v.is_switch:
+        # we need to one interface and add them
+        # to both the bridges
+        # should check if this is possible
+        pass
+      if not u.is_switch and v.is_switch:
+        # u already has an iface
+        # just add that iface onto v's bridge
+        sv.add_iface(su)
+      if u.is_switch and not v.is_switch:
+        # ditto, but with v
+        su.add_iface(sv)
+      else:
+        # both are hosts, connected by wire
+        # not allowed for now
+        # one solution is to create a temporary
+        # bridge and connect the two
+        pass
+
+    # create the edges
+    for (u,v) in self.topo.edges:
+      create_link(u, v)
+    
   def start(self):
     """ Boot up all the hosts """
     for h in self.hosts:

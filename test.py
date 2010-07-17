@@ -1,16 +1,15 @@
 
 from net import Mininet
 from node import Host, Switch
+from topo import SingleSwitchTopo
 
 def main():
-  m = Mininet(HostClass=Host, SwitchClass=Switch)
-  m.add_host('a')
-  m.add_host('b')
-  m.add_switch()
-
+  topo = SingleSwitchTopo(10)
+  m = Mininet(HostClass=Host, SwitchClass=Switch, topo=topo)
+  
   m.start()
-  m.stop()
-  m.destroy()
+  #m.stop()
+  #m.destroy()
 
 main()
 
