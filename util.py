@@ -5,7 +5,7 @@ from resource import setrlimit, RLIMIT_NPROC, RLIMIT_NOFILE
 import select
 from subprocess import call, check_call, Popen, PIPE, STDOUT
 
-from mininet.log import lg
+from log import lg
 
 def run( cmd ):
     """Simple interface to subprocess.call()

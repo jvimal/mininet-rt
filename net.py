@@ -12,37 +12,51 @@ Networking is setup as follows:
   topologies
 """
 
+import os, sys
+
 class Mininet:
 
   def __init__(self, HostClass, SwitchClass):
+    if os.getuid() != 0:
+      print 'Please run as root.'
+      sys.exit(-1)
+
     self.host = HostClass
     self.switch = SwitchClass
     
-    self.next_host_id = 0
-    self.next_switch_id = 0
+    self.next_host_id = 1
+    self.next_switch_id = 1
 
     self.hosts = []
     self.switches = []
     self.controllers = []
+    self.name_to_node = {}
 
-  def add_host(self):
+  def add_host(self, name=None):
     """ Adds a host to the network with given properties """
     host = self.host(self.next_host_id)
-    self.next_host_id+=1
-    
+    if name is None:
+      name = 'h%d' % self.next_host_id
+    host.name = name
     self.hosts.append(host)
+    
+    self.name_to_node[name] = host
+
+    self.next_host_id+=1
     return host
 
-  def add_switch(self, id):
+  def add_switch(self):
     """
       It can be a kernel switch, a user switch, or just
       a simple Linux bridge.  Let's go with bridge for
       now
     """
     sw = self.switch(self.next_switch_id)
-    self.next_switch_id += 1
-
     self.switches.append(sw)
+
+    self.name_to_node[sw.name] = sw
+
+    self.next_switch_id += 1
     return sw
 
   def add_controller(self, controller):
@@ -58,7 +72,13 @@ class Mininet:
   def configure_switches(self):
     # nothing to be done as of now
     pass
-  
+
+  def create_links(self):
+    pass
+
+  def destroy_links(self):
+    pass
+
   def build_topology(self, topo):
     pass
   

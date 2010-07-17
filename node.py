@@ -33,7 +33,7 @@ class Host(Node):
     self.ifaces = []
   
   def create(self):
-    cmd("vzctl create %d" % self.id)
+    cmd("vzctl create %d --ostemplate debian-5.0-x86_64" % self.id)
 
   def start(self):
     cmd("vzctl start %d" % self.id)
