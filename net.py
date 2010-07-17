@@ -32,7 +32,7 @@ class Mininet:
     self.controllers = []
     self.name_to_node = {}
 
-    self.build_topology(topo)
+    self.topo = topo
 
   def add_host(self, name=None):
     """ Adds a host to the network with given properties """
@@ -72,8 +72,8 @@ class Mininet:
       host.configure()
 
   def configure_switches(self):
-    # nothing to be done as of now
-    pass
+    for s in self.switches:
+      s.configure()
 
   def build_topology(self, topo):
     self.ids_to_nodes = {}
@@ -85,6 +85,7 @@ class Mininet:
         self.ids_to_nodes[n.id] = s
       else:
         h = self.add_host()
+        h.start()
         self.ids_to_nodes[n.id] = h
 
     def create_link(u, v):
@@ -115,14 +116,19 @@ class Mininet:
     
   def start(self):
     """ Boot up all the hosts """
-    for h in self.hosts:
-      h.start()
+    self.build_topology(self.topo)
+    self.configure_switches()
+    self.configure_hosts()
 
   def stop(self):
     """ Shutdown all the hosts """
     for h in self.hosts:
       h.stop()
-  
+    
+    # remove the bridges
+    for s in self.switches:
+      s.stop()
+
   def destroy(self):
     """ Clean up mininet instances """
     for h in self.hosts:

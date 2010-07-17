@@ -4,11 +4,11 @@ In contrast to mininet, there are no Switches
 or Controller nodes.  Just an end host.
 """
 
-from util import run
+from util import run, ipStr
 
 def cmd(s):
   print '# %s' % s
-  #run(s)
+  run(s)
 
 
 class Node(object):
@@ -35,13 +35,23 @@ class Host(Node):
   
   def create(self):
     cmd("vzctl create %d --hostname %s --ostemplate debian-5.0-x86_64" % (self.id, self.name))
-    self.add_iface()
 
   def start(self):
     cmd("vzctl start %d" % self.id)
+    self.add_iface()
 
   def stop(self):
     cmd("vzctl stop %d" % self.id)
+
+  def configure(self, ip=None, mask=None):
+    # bring up the eth0 and set ip address
+    if ip is None:
+      # 10.0.0.0 + id
+      ip = ipStr(self.id)
+      mask = 8
+    cmd("vzctl exec %d ifconfig eth0 %s/%s" % (self.id, ip, mask))
+    self.ip = ip
+    self.mask = mask
 
   def cmd(self, cmd):
     cmd("vzctl exec %d %s" % (id, cmd))
@@ -76,8 +86,10 @@ class Switch(Node):
     cmd("brctl addif %s %s" % (self.name, iface))
     self.ifaces.append(iface)
 
-  def destroy(self):
+  def configure(self):
+    cmd("ifconfig %s 0" % self.name)
+
+  def stop(self):
     # TODO: should we delif's first?
     cmd("brctl delbr %s" % self.name)
-
 
