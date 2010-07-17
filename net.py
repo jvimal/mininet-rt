@@ -17,29 +17,32 @@ class Mininet:
   def __init__(self, HostClass, SwitchClass):
     self.host = HostClass
     self.switch = SwitchClass
+    
+    self.next_host_id = 0
+    self.next_switch_id = 0
 
     self.hosts = []
     self.switches = []
     self.controllers = []
-    self.name_to_node = {}
 
-
-  def add_host(self, name, _mac=None, _ip=None):
+  def add_host(self):
     """ Adds a host to the network with given properties """
-    host = self.host(name, mac=_mac, ip=_ip)
+    host = self.host(self.next_host_id)
+    self.next_host_id+=1
+    
     self.hosts.append(host)
-    self.name_to_node[name] = host
     return host
 
-  def add_switch(self, name, _mac=None, _ip=None):
+  def add_switch(self, id):
     """
       It can be a kernel switch, a user switch, or just
       a simple Linux bridge.  Let's go with bridge for
       now
     """
-    sw = self.switch(name, mac=_mac, ip=_ip)
+    sw = self.switch(self.next_switch_id)
+    self.next_switch_id += 1
+
     self.switches.append(sw)
-    self.name_to_node[name] = sw
     return sw
 
   def add_controller(self, controller):
@@ -78,3 +81,4 @@ class Mininet:
       s.destroy()
 
     self.destroy_links()
+
