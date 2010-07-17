@@ -23,8 +23,8 @@ class Topo(object):
   def add_node(self, n):
     self.nodes.append(n)
 
-  def add_edge(self, e):
-    self.edges.append(e)
+  def add_edge(self, u, v):
+    self.edges.append((u,v))
 
 
 class SingleSwitchTopo(Topo):
