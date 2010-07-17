@@ -10,7 +10,22 @@ def cmd(s):
   print '# %s' % s
   #run(s)
 
-class Host:
+
+class Node(object):
+  def start(self):
+    pass
+
+  def stop(self):
+    pass
+
+  def create(self):
+    pass
+
+  def destroy(self):
+    pass
+
+
+class Host(Node):
   def __init__(self,id):
     self.id = id
     # Create scratch area if not there already
@@ -41,11 +56,11 @@ class Host:
     cmd("vzctl destroy %d" % self.id)
 
 
-class Switch:
+class Switch(Node):
   def __init__(self,id):
+    # This will be a bridge sw<id>
     self.name = 'sw%d' % id
     self.id = id
-    # This will be a bridge sw<id>
     self.create()
     self.ifaces = []
 
@@ -54,4 +69,5 @@ class Switch:
 
   def destroy(self):
     cmd("brctl delbr %s" % self.name)
-  
+
+
