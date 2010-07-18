@@ -3,8 +3,9 @@
 In contrast to mininet, there are no Switches
 or Controller nodes.  Just an end host.
 """
-
+import os
 from util import run, ipStr
+fileopen = open
 
 def cmd(s):
   print '# %s' % s
@@ -53,9 +54,17 @@ class Host(Node):
     self.ip = ip
     self.mask = mask
 
-  def cmd(self, cmd):
-    cmd("vzctl exec %d %s" % (id, cmd))
+  def IP(self):
+    return self.ip
+
+  def cmd(self, c):
+    cmd("vzctl exec %d %s" % (self.id, c))
   
+  def open(self, file):
+    fullpath = os.path.join("/var/lib/vz/private/%d" % self.id, file)
+    print '# open %s' % fullpath
+    return fileopen(fullpath)
+
   def add_iface(self):
     next_iface_id = len(self.ifaces)
     veth = 'veth%d.%d' % (self.id, next_iface_id)
