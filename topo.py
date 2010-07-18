@@ -40,6 +40,9 @@ class SingleSwitchTopo(Topo):
       n = Node(h)
       self.add_node(n)
       self.add_edge(n, s)
+  
+  def __str__(self):
+    return '%s(%s)' % ('SingleSwitchTopo', self.k)
 
 class LinearTopo(Topo):
   def __init__(self,k=2):
@@ -54,5 +57,9 @@ class LinearTopo(Topo):
       self.add_node(sw)
       self.add_node(ho)
       self.add_edge(sw, ho)
+      if s > 1:
+        self.add_edge(Node(s-1, is_switch=True), sw)
 
+  def __str__(self):
+    return '%s(%s)' % ('LinearTopo', self.k)
 
