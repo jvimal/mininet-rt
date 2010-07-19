@@ -13,6 +13,12 @@ Networking is setup as follows:
 """
 
 import os, sys
+from util import run, shell_cmd, shell_output
+from time import sleep
+
+def cmd(s):
+  print '# %s' % s
+  run(s)
 
 class Mininet:
 
@@ -95,7 +101,7 @@ class Mininet:
         # we need to one interface and add them
         # to both the bridges
         # should check if this is possible
-        pass
+        su.connect_switch(sv)
       if not u.is_switch and v.is_switch:
         # u already has an iface
         # just add that iface onto v's bridge
@@ -114,12 +120,41 @@ class Mininet:
     for (u,v) in self.topo.edges:
       create_link(u, v)
     
+  def configure_rates(self):
+    # all veth<id>.0 devices get 100Mbps
+    # same for all switches
+    def limit_outgoing(i):
+      cmd('tc qdisc add dev %s handle 1:0 root dsmark indices 1 default_index 0' % i)
+      cmd('tc qdisc add dev %s handle 2:0 parent 1:0 tbf burst 2560 limit 2560 mtu 1514 rate 12500000bps' % i)
+      
+    for h in self.hosts:
+      for iface in h.ifaces:
+        limit_outgoing(iface[0])
+
+    for s in self.switches:
+      for iface in s.created:
+        limit_outgoing(iface)
+
   def start(self):
     """ Boot up all the hosts """
     self.build_topology(self.topo)
     self.configure_switches()
     self.configure_hosts()
+    # Wait for hosts to boot up
+    self.wait_for_hosts()
+    #self.configure_rates()
 
+  def wait_for_hosts(self):
+    l = len(self.hosts)
+    while True:
+      print 'Waiting for hosts to boot..', 
+      sys.stdout.flush()
+      sleep(10)
+      n = int(shell_output('vzlist -a | grep running | wc -l').strip())
+      print '%d/%d' % (n, l)
+      if n == l:
+        break
+  
   def stop(self):
     """ Shutdown all the hosts """
     for h in self.hosts:

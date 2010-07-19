@@ -17,6 +17,14 @@ def checkRun( cmd ):
        cmd: list of command params"""
     return check_call( cmd.split( ' ' ) )
 
+def shell_output(cmd):
+    p = Popen(cmd, shell=True, stdout=PIPE)
+    return p.communicate()[0]
+
+def shell_cmd(cmd):
+    ret = call(cmd, shell=True)
+    return ret
+
 def quietRun( cmd ):
     """Run a command, routing stderr to stdout, and return the output.
        cmd: list of command params"""

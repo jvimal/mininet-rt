@@ -1,11 +1,12 @@
 
 from net import Mininet
 from node import Host, Switch
-from topo import SingleSwitchTopo
-from tests import IPerfOneToAllTest
+from topo import SingleSwitchTopo, LinearTopo
+from tests import IPerfOneToAllTest, CPUStressTest
 
 import html
 import sys
+from time import sleep
 import getopt
 
 def main():
@@ -20,20 +21,27 @@ def main():
       t = int(a)
 
   outputfile = 'results-%d-%d.html' % (n, t)
-
-  topo = SingleSwitchTopo(n)
+  
+  topo = LinearTopo(n)
   m = Mininet(HostClass=Host, SwitchClass=Switch, topo=topo)
   
   m.start()
+  
   it = IPerfOneToAllTest(m.hosts, t)
   it.start()
+  while True:
+    x = int(raw_input())
+    if x == 1:
+      break
+
   res = it.end()
 
   html.html(outputfile, html.comments([
-    'topology:' + 'LinearTopo(%d)' % n,
+    'topology:' + '%s' % (topo),
   ]) + res)
 
   m.stop()
+  
   #m.destroy()
 
 main()
