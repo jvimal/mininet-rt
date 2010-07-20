@@ -132,8 +132,8 @@ class Mininet:
       # add the policy
       cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate 100mbit burst 15k"% (1, i))
       cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate 100mbit burst 15k"% (1, l+i))
-      # create the filter
       
+      # create the filter
       cmd("iptables -t mangle -A PREROUTING -i veth%d.0 -j MARK --set-mark %d" % (i, i))
       cmd("iptables -t mangle -A PREROUTING -i veth%d.0 -j RETURN" % (i))
       
@@ -147,8 +147,6 @@ class Mininet:
       # attach a SFQ at the end of every chain
       cmd("tc qdisc add dev veth%d.0 parent 1:%d handle %d:0 sfq perturb 10" % (1, i, i))
       cmd("tc qdisc add dev veth%d.0 parent 1:%d handle %d:0 sfq perturb 10" % (1, i+l, i+l))
-      #cmd("tc filter add dev veth%d.0 protocol ip parent 1:0 prio 1 u32 match ip src %s/32 flowid 1:%d" % (1, h.IP(), i))
-      #cmd("tc filter add dev veth%d.0 protocol ip parent 1:0 prio 1 u32 match ip dst %s/32 flowid 1:%d" % (1, h.IP(), i))
 
 
   def start(self):
