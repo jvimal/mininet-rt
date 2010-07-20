@@ -123,17 +123,18 @@ class Mininet:
   def configure_rates(self):
     # all veth<id>.0 devices get 100Mbps
     # same for all switches
-    def limit_outgoing(i):
-      cmd('tc qdisc add dev %s handle 1:0 root dsmark indices 1 default_index 0' % i)
-      cmd('tc qdisc add dev %s handle 2:0 parent 1:0 tbf burst 2560 limit 2560 mtu 1514 rate 12500000bps' % i)
-      
-    for h in self.hosts:
-      for iface in h.ifaces:
-        limit_outgoing(iface[0])
+    
+    cmd("tc qdisc del dev veth1.0 root")
+    cmd("tc qdisc add dev veth1.0 root handle 1:0 htb default 10")
+    l = len(self.hosts)
+    for i,h in zip(range(1,l+1), self.hosts):
+      # add the policy
+      cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate 100mbit burst 15k"% (1, i))
+      #cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate 100mbit burst 15k"% (1, l+i))
+      # create the filter
+      cmd("tc filter add dev veth%d.0 protocol ip parent 1:0 prio 1 u32 match ip src %s/32 flowid 1:%d" % (1, h.IP(), i))
+      #cmd("tc filter add dev veth%d.0 protocol ip parent 1:0 prio 1 u32 match ip dst %s/32 flowid 1:%d" % (1, h.IP(), i))
 
-    for s in self.switches:
-      for iface in s.created:
-        limit_outgoing(iface)
 
   def start(self):
     """ Boot up all the hosts """
