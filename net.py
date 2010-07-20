@@ -126,13 +126,28 @@ class Mininet:
     
     cmd("tc qdisc del dev veth1.0 root")
     cmd("tc qdisc add dev veth1.0 root handle 1:0 htb default 10")
+    cmd("iptables -t mangle -F")
     l = len(self.hosts)
     for i,h in zip(range(1,l+1), self.hosts):
       # add the policy
       cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate 100mbit burst 15k"% (1, i))
-      #cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate 100mbit burst 15k"% (1, l+i))
+      cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate 100mbit burst 15k"% (1, l+i))
       # create the filter
-      cmd("tc filter add dev veth%d.0 protocol ip parent 1:0 prio 1 u32 match ip src %s/32 flowid 1:%d" % (1, h.IP(), i))
+      
+      cmd("iptables -t mangle -A PREROUTING -i veth%d.0 -j MARK --set-mark %d" % (i, i))
+      cmd("iptables -t mangle -A PREROUTING -i veth%d.0 -j RETURN" % (i))
+      
+      cmd("iptables -t mangle -A POSTROUTING -o veth%d.0 -j MARK --set-mark %d" % (i, l+i))
+      cmd("iptables -t mangle -A POSTROUTING -o veth%d.0 -j RETURN" % (i))
+      
+      # now tell tc that we mark packets in iptables
+      cmd("tc filter add dev veth1.0 parent 1:0 protocol ip prio 1 handle %d fw classid 1:%d" % (i, i))
+      cmd("tc filter add dev veth1.0 parent 1:0 protocol ip prio 1 handle %d fw classid 1:%d" % (i+l, i+l))
+      
+      # attach a SFQ at the end of every chain
+      cmd("tc qdisc add dev veth%d.0 parent 1:%d handle %d:0 sfq perturb 10" % (1, i, i))
+      cmd("tc qdisc add dev veth%d.0 parent 1:%d handle %d:0 sfq perturb 10" % (1, i+l, i+l))
+      #cmd("tc filter add dev veth%d.0 protocol ip parent 1:0 prio 1 u32 match ip src %s/32 flowid 1:%d" % (1, h.IP(), i))
       #cmd("tc filter add dev veth%d.0 protocol ip parent 1:0 prio 1 u32 match ip dst %s/32 flowid 1:%d" % (1, h.IP(), i))
 
 
@@ -143,7 +158,7 @@ class Mininet:
     self.configure_hosts()
     # Wait for hosts to boot up
     self.wait_for_hosts()
-    #self.configure_rates()
+    self.configure_rates()
 
   def wait_for_hosts(self):
     l = len(self.hosts)
@@ -164,6 +179,12 @@ class Mininet:
     # remove the bridges
     for s in self.switches:
       s.stop()
+
+    # remove iptables/tc queues
+    cmd("iptables -t mangle -F")
+    cmd("tc qdisc del dev veth1.0 root")
+    # ^^ This should hopefully remove all the
+    # classes/queues under it too
 
   def destroy(self):
     """ Clean up mininet instances """
