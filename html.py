@@ -49,7 +49,7 @@ def csv(csv,title,opts=None):
   csvtxt = r"""
   <div style='float:left;border:1px solid black;'>
   %s
-  <div id="graphdiv%d" style="width:400px;height:150px"></div>
+  <div id="graphdiv%d" style="width:1000px;height:500px"></div>
   <script type="text/javascript">
   g = new Dygraph(
     // containing div
