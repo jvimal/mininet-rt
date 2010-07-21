@@ -43,9 +43,13 @@ def csv(csv,title,opts=None):
   csvcount += 1
   if opts!=None:
     opts=",%s" % opts
+  else:
+    opts=''
   csv = map(lambda x: r"'%s\n'" % x, csv)
   csvtxt = r"""
-  <div id="graphdiv%d" style="width:300px;height:150px"></div>
+  <div style='float:left;border:1px solid black;'>
+  %s
+  <div id="graphdiv%d" style="width:400px;height:150px"></div>
   <script type="text/javascript">
   g = new Dygraph(
     // containing div
@@ -54,8 +58,9 @@ def csv(csv,title,opts=None):
     %s
   );
   </script>
-  """ % (csvcount, csvcount, "+".join(csv), opts)
-  return join([tag("h3", title), csvtxt])
+  </div>
+  """ % (tag("h3",title), csvcount, csvcount, "+".join(csv), opts)
+  return csvtxt
 
 
 def table(d):
