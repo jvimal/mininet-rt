@@ -91,7 +91,8 @@ class IPerfOneToAllTest:
       ["valueRange:[0,15]"])
 
     ret += html.csv(tcpwindow, 
-      "TCP Window size host %s" % h.name)
+      "TCP Window size host %s" % h.name,
+      ["rollPeriod:7", "showRoller:true"])
     return ret
 
   def end(self):
