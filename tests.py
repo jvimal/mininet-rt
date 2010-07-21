@@ -54,21 +54,44 @@ class IPerfOneToAllTest:
 
   def output(self):
     ret = ''
-    start_time = 0
+    bandwidth = [ ','.join( ['Time'] + [('b%d' % i) for i in xrange(1,10+1)] )]
+    tcpwindow = [ ','.join( ['Time'] + [('W%d' % i) for i in xrange(1,10+1)] )]
+    bs = {}
+    tcp= {}
+    for t in xrange(0, self.t):
+      bs[t]=[]
+      tcp[t]=[]
+    
     for h in self.hosts[1:]:
-      # time series data from iperf, 
+      # time series data from iperf, tcpstats.py
       lines = h.open('iperf_output/%s-%s' %(h.name, self.hosts[0].name)).readlines()
-      bandwidth = ['Time,Bandwidth (Mbps)']
-      
+      t=0
       for l in lines:
-        arr = l.strip().split(',')
-        tim,val = int(arr[0]), int(arr[-1])
-        if start_time == 0:
-          start_time = tim
-        bandwidth.append( "%d,%.3f" % (tim - start_time, val*1.0/(2**20)) )
+        val = int(l.split(',')[-1])*1.0/(2**20)
+        bs[t].append("%.2f" % val)
+        t += 1
+        if t == self.t:
+          break
       
-      ret += html.csv(bandwidth, "Bandwidth host %s" % (h.name), "{valueRange:[0,15]}")
-      ret += html.csv(map(lambda x: x.strip(), h.open('tcpstats.csv').readlines()), "TCP Window size host %s" % h.name)
+      lines = map(lambda x: x.strip(), h.open('tcpstats.csv').readlines())[0:t]
+      t=0
+      for l in lines[1:]:
+        val = int(l.split(',')[1])
+        tcp[t].append("%d" % val)
+        t += 1
+        if t == self.t:
+          break
+
+    # put values together
+    for t in xrange(0,self.t):
+      bandwidth.append(','.join(bs[t]))
+      tcpwindow.append(','.join(tcp[t]))
+    ret += html.csv(bandwidth, 
+      "Bandwidth host %s" % (h.name), 
+      "{valueRange:[0,15]}")
+
+    ret += html.csv(tcpwindow, 
+      "TCP Window size host %s" % h.name)
     return ret
 
   def end(self):
