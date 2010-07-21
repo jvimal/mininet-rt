@@ -70,6 +70,7 @@ class Host(Node):
     fullpath1 = os.path.join("/var/lib/vz/root/%d" % self.id, file)
     fullpath2 = os.path.join("/var/lib/vz/private/%d" % self.id, file)
     print '# open %s' % fullpath1
+    
     try:
       ret = fileopen(fullpath1)
     except:

@@ -9,71 +9,71 @@ import sys
 from time import sleep
 import getopt
 
-from settings import n, t, rate, outputfile, detach, dryrun
+import settings as s
 from help import printhelp
 
 def main():
   # number of hosts
-  n = 10
+  s.n = 10
 
   # time to run, parameter to iperf
-  t = 10
+  s.t = 10
 
   # rate limit interfaces?
-  rate = None
+  s.rate = None
 
   # where to store output of experiments
-  outputfile = ''
+  s.outputfile = ''
 
   # should we detach from terminal after booting host?
-  detach = False
+  s.detach = False
 
   # Just check the commands that will be executed
-  dryrun = False
+  s.dryrun = False
 
   optlist, args = getopt.getopt(sys.argv[1:], 'n:t:r:o:dph')
   for (o,a) in optlist:
     if o == '-n':
-      n = int(a)
+      s.n = int(a)
     if o == '-t':
-      t = int(a)
+      s.t = int(a)
     if o == '-r':
-      rate = a
+      s.rate = a
     if o == '-o':
-      outputfile = a
+      s.outputfile = a
     if o == '-d':
-      detach = True
+      s.detach = True
     if o == '-p':
-      dryrun = True
+      s.dryrun = True
     if o == '-h':
       printhelp()
       sys.exit(0)
 
-  if outputfile == '':
-    outputfile = 'results-%d-%d.html' % (n, t)
+  if s.outputfile == '':
+    s.outputfile = 'results-%d-%d.html' % (s.n, s.t)
   
-  topo = LinearTopo(n)
-  m = Mininet(HostClass=Host, SwitchClass=Switch, topo=topo, rate=rate)
+  topo = LinearTopo(s.n)
+  m = Mininet(HostClass=Host, SwitchClass=Switch, topo=topo, rate=s.rate)
   
   m.start()
   
-  it = IPerfOneToAllTest(m.hosts, t)
+  it = IPerfOneToAllTest(m.hosts, s.t)
   it.start()
 
-  if detach:
+  if s.detach:
     return
 
-  if not dryrun:
+  if not s.dryrun:
     while True:
       x = int(raw_input())
       if x == 1:
         break
 
-  res = it.end()
-
-  html.html(outputfile, html.comments([
-    'topology:' + '%s' % (topo),
-  ]) + res)
+    res = it.end()
+  
+    html.html(outputfile, html.comments([
+      'topology:' + '%s' % (topo),
+    ]) + res)
 
   m.stop()
   #m.destroy()

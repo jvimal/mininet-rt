@@ -15,10 +15,12 @@ Networking is setup as follows:
 import os, sys
 from util import run, shell_output
 from time import sleep
+import settings
 
 def cmd(s):
   print '# %s' % s
-  run(s)
+  if not settings.dryrun:
+    run(s)
 
 class Mininet:
 
@@ -162,7 +164,7 @@ class Mininet:
 
   def wait_for_hosts(self):
     l = len(self.hosts)
-    while True:
+    while True and not settings.dryrun:
       print 'Waiting for hosts to boot..', 
       sys.stdout.flush()
       sleep(10)
