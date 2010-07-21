@@ -12,5 +12,5 @@ def printhelp():
     -d       :  Start the hosts, configure the network and exit
     -p       :  Just print the commands (a dry-run)
     -h       :  Print this help
-"""
+""" % (sys.argv[0])
 
