@@ -58,10 +58,12 @@ class IPerfOneToAllTest:
     tcpwindow = [ ','.join( ['Time'] + [('W%d' % i) for i in xrange(1,10+1)] )]
     bs = {}
     tcp= {}
+    losses = {}
+
     for t in xrange(0, self.t):
       bs[t]=["%d"%t]
       tcp[t]=["%d"%t]
-    
+
     for h in self.hosts[1:]:
       # time series data from iperf, tcpstats.py
       lines = h.open('iperf_output/%s-%s' %(h.name, self.hosts[0].name)).readlines()
@@ -82,17 +84,27 @@ class IPerfOneToAllTest:
         if t == self.t:
           break
 
+      # get loss packets
+      losses[h.id]={}
+      lines = map(lambda x: x.strip().split(' '), h.open('/proc/net/netstat').readlines()[0:2])
+      for k,v in zip(lines[0], lines[1]):
+        if k in ['TCPLoss', 'TCPTimeouts']:
+          losses[h.id][k]=v
+
     # put values together
     for t in xrange(0,self.t):
       bandwidth.append(','.join(bs[t]))
       tcpwindow.append(','.join(tcp[t]))
+
     ret += html.csv(bandwidth, 
       "Bandwidth host %s" % (h.name), 
       ["valueRange:[0,15]"])
 
     ret += html.csv(tcpwindow, 
-      "TCP Window size host %s" % h.name,
-      ["rollPeriod:7", "showRoller:true"])
+      "TCP Window size hosts",
+      ["rollPeriod:1", "showRoller:true"])
+
+    ret += html.join([html.tag("h3", "TCP stats"), html.table(losses)])
     return ret
 
   def end(self):
