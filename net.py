@@ -13,7 +13,7 @@ Networking is setup as follows:
 """
 
 import os, sys
-from util import run, shell_cmd, shell_output
+from util import run, shell_output
 from time import sleep
 
 def cmd(s):
@@ -22,7 +22,7 @@ def cmd(s):
 
 class Mininet:
 
-  def __init__(self, HostClass, SwitchClass, topo):
+  def __init__(self, HostClass, SwitchClass, topo, rate=None):
     if os.getuid() != 0:
       print 'Please run as root.'
       sys.exit(-1)
@@ -39,6 +39,7 @@ class Mininet:
     self.name_to_node = {}
 
     self.topo = topo
+    self.rate = rate
 
   def add_host(self, name=None):
     """ Adds a host to the network with given properties """
@@ -130,8 +131,8 @@ class Mininet:
     l = len(self.hosts)
     for i,h in zip(range(1,l+1), self.hosts):
       # add the policy
-      cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate 100mbit burst 15k"% (1, i))
-      cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate 100mbit burst 15k"% (1, l+i))
+      cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate %s burst 15k"% (1, i, self.rate))
+      cmd("tc class add dev veth%d.0 parent 1:0 classid 1:%d htb rate %s burst 15k"% (1, l+i, self.rate))
       
       # create the filter
       cmd("iptables -t mangle -A PREROUTING -i veth%d.0 -j MARK --set-mark %d" % (i, i))
@@ -156,7 +157,8 @@ class Mininet:
     self.configure_hosts()
     # Wait for hosts to boot up
     self.wait_for_hosts()
-    self.configure_rates()
+    if self.rate is not None:
+      self.configure_rates()
 
   def wait_for_hosts(self):
     l = len(self.hosts)

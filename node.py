@@ -7,11 +7,12 @@ import os
 from util import run, ipStr, shell_cmd
 fileopen = open
 from cmd import Cmd
+import settings
 
 def cmd(s):
   print '# %s' % s
-  #run(s)
-  shell_cmd(s)
+  if not settings.dryrun:
+    shell_cmd(s)
 
 class Node(object):
   def start(self):
