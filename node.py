@@ -64,9 +64,16 @@ class Host(Node):
     #self.shell.cmd(c)
   
   def open(self, file):
-    fullpath = os.path.join("/var/lib/vz/private/%d" % self.id, file)
-    print '# open %s' % fullpath
-    return fileopen(fullpath)
+    # check if root fs is mounted.  if it is, then return 
+    # that file.  else return from private dir
+    fullpath1 = os.path.join("/var/lib/vz/root/%d" % self.id, file)
+    fullpath2 = os.path.join("/var/lib/vz/private/%d" % self.id, file)
+    print '# open %s' % fullpath1
+    try:
+      ret = fileopen(fullpath1)
+    except:
+      ret = fileopen(fullpath2)
+    return ret
 
   def add_iface(self):
     next_iface_id = len(self.ifaces)
