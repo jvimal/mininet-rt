@@ -86,7 +86,9 @@ class IPerfOneToAllTest:
 
       # get loss packets
       losses[h.id]={}
-      lines = map(lambda x: x.strip().split(' '), h.open('/proc/net/netstat').readlines()[0:2])
+      lines = map(lambda x: x.strip().split(' '), 
+        h.open('proc/1/net/netstat').readlines()[0:2])
+
       for k,v in zip(lines[0], lines[1]):
         if k in ['TCPLoss', 'TCPTimeouts']:
           losses[h.id][k]=v
@@ -97,7 +99,7 @@ class IPerfOneToAllTest:
       tcpwindow.append(','.join(tcp[t]))
 
     ret += html.csv(bandwidth, 
-      "Bandwidth host %s" % (h.name), 
+      "Bandwidth per host", 
       ["valueRange:[0,15]"])
 
     ret += html.csv(tcpwindow, 
