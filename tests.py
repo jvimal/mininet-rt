@@ -68,7 +68,7 @@ class IPerfOneToAllTest:
         bandwidth.append( "%d,%.3f" % (tim - start_time, val*1.0/(2**20)) )
       
       ret += html.csv(bandwidth, "Bandwidth host %s" % (h.name))
-      ret += html.csv(h.open('tcpstats.csv').readlines(), "TCP Window size host %s" % h.name)
+      ret += html.csv(map(lambda x: x.strip(), h.open('tcpstats.csv').readlines()), "TCP Window size host %s" % h.name)
     return ret
 
   def end(self):
