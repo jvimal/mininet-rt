@@ -59,8 +59,8 @@ class IPerfOneToAllTest:
     bs = {}
     tcp= {}
     for t in xrange(0, self.t):
-      bs[t]=[]
-      tcp[t]=[]
+      bs[t]=["%d"%t]
+      tcp[t]=["%d"%t]
     
     for h in self.hosts[1:]:
       # time series data from iperf, tcpstats.py
