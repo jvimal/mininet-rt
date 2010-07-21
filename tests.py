@@ -55,9 +55,9 @@ class IPerfOneToAllTest:
   def output(self):
     ret = ''
     start_time = 0
-    for h in self.hosts:
+    for h in self.hosts[1:]:
       # time series data from iperf, 
-      lines = h.open('iperf_output/%s-%s').readlines()
+      lines = h.open('iperf_output/%s-%s' %(h.name, self.hosts[0].name)).readlines()
       bandwidth = ['Time,Bandwidth (Mbps)']
       
       for l in lines:
@@ -69,6 +69,7 @@ class IPerfOneToAllTest:
       
       ret += html.csv(bandwidth, "Bandwidth host %s" % (h.name))
       ret += html.csv(h.open('tcpstats.csv').readlines(), "TCP Window size host %s" % h.name)
+    return ret
 
   def end(self):
     #sleep(self.t) # we sleep till user wakes us up
