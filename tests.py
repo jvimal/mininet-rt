@@ -88,7 +88,7 @@ class IPerfOneToAllTest:
       tcpwindow.append(','.join(tcp[t]))
     ret += html.csv(bandwidth, 
       "Bandwidth host %s" % (h.name), 
-      "{valueRange:[0,15]}")
+      ["valueRange:[0,15]"])
 
     ret += html.csv(tcpwindow, 
       "TCP Window size host %s" % h.name)

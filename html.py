@@ -38,28 +38,26 @@ def section(name, s):
 def comments(l):
   return tag("pre",'\n'.join(l))
 
-def csv(csv,title,opts=None):
+def csv(csv,title,opts=[]):
   global csvcount
   csvcount += 1
-  if opts!=None:
-    opts=",%s" % opts
-  else:
-    opts=''
+  opts.append("rightGap:250")
+
   csv = map(lambda x: r"'%s\n'" % x, csv)
   csvtxt = r"""
   <div style='float:left;border:1px solid black;'>
   %s
-  <div id="graphdiv%d" style="width:1000px;height:500px"></div>
+  <div id="graphdiv%d" style="width:1200px;height:500px"></div>
   <script type="text/javascript">
   g = new Dygraph(
     // containing div
     document.getElementById("graphdiv%d"),
     %s
-    %s
+    , {%s}
   );
   </script>
   </div>
-  """ % (tag("h3",title), csvcount, csvcount, "+".join(csv), opts)
+  """ % (tag("h3",title), csvcount, csvcount, "+".join(csv), ",".join(opts))
   return csvtxt
 
 
