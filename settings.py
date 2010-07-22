@@ -10,4 +10,5 @@ rate = '100mbit'
 outputfile = 'out.html'
 detach = False
 dryrun = False
+test = ''
 

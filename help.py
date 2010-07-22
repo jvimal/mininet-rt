@@ -11,6 +11,9 @@ def printhelp():
                 default: results-$n-$t.html
     -d       :  Start the hosts, configure the network and exit
     -p       :  Just print the commands (a dry-run)
+    -T       :  Which test to run; 
+                Default: none
+                Available: iperf
     -h       :  Print this help
 """ % (sys.argv[0])
 
