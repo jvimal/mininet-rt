@@ -20,7 +20,7 @@ def main():
   s.t = 10
 
   # rate limit interfaces?
-  s.rate = None
+  s.rate = '100mbit'
 
   # where to store output of experiments
   s.outputfile = ''
