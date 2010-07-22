@@ -30,8 +30,10 @@ def main():
 
   # Just check the commands that will be executed
   s.dryrun = False
+  
+  s.test = ''
 
-  optlist, args = getopt.getopt(sys.argv[1:], 'n:t:r:o:dph')
+  optlist, args = getopt.getopt(sys.argv[1:], 'n:t:r:o:dphT:s')
   for (o,a) in optlist:
     if o == '-n':
       s.n = int(a)
@@ -48,17 +50,25 @@ def main():
     if o == '-h':
       printhelp()
       sys.exit(0)
+    if o == '-T':
+      s.test = a
+    if o == '-s':
+      s.stop = True
 
   if s.outputfile == '':
     s.outputfile = 'results-%d-%d.html' % (s.n, s.t)
   
   topo = LinearTopo(s.n)
   m = Mininet(HostClass=Host, SwitchClass=Switch, topo=topo, rate=s.rate)
-  
   m.start()
+
+  if s.stop:
+    m.stop()
+    return
   
-  it = IPerfOneToAllTest(m.hosts, s.t)
-  it.start()
+  if s.test == 'iperf':
+    it = IPerfOneToAllTest(m.hosts, s.t)
+    it.start()
 
   if s.detach:
     return
@@ -71,7 +81,7 @@ def main():
 
     res = it.end()
   
-    html.html(outputfile, html.comments([
+    html.html(s.outputfile, html.comments([
       'topology:' + '%s' % (topo),
     ]) + res)
 

@@ -11,4 +11,5 @@ outputfile = 'out.html'
 detach = False
 dryrun = False
 test = ''
+stop = False
 

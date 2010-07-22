@@ -14,6 +14,7 @@ def printhelp():
     -T       :  Which test to run; 
                 Default: none
                 Available: iperf
+    -s       :  Stop the containers and bring down the network
     -h       :  Print this help
 """ % (sys.argv[0])
 
