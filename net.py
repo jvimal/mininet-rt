@@ -166,12 +166,12 @@ class Mininet:
     l = len(self.hosts)
     while True and not settings.dryrun:
       print 'Waiting for hosts to boot..', 
+      sleep(5)
       sys.stdout.flush()
       n = int(shell_output('vzlist -a | grep running | wc -l').strip())
       print '%d/%d' % (n, l)
       if n == l:
         break
-      sleep(2)
   
   def stop(self):
     """ Shutdown all the hosts """
