@@ -51,6 +51,7 @@ class IPerfOneToAllTest:
       h1.cmd('iperf -t %d -c %s -i 1 -yc > iperf_output/%s-%s &' 
         % (self.t, self.hosts[0].IP(), h1.name, self.hosts[0].name))
       h1.cmd('python tcpstats.py > tcpstats.csv &')
+      h1.cmd('tcpdump -i eth0 tcp -w dump-%s.pcap 2> tcpdump_err &' % (h1.name))
 
   def output(self):
     ret = ''

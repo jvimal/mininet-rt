@@ -31,9 +31,16 @@ def main():
   # Just check the commands that will be executed
   s.dryrun = False
   
+  # Which test to run
   s.test = ''
 
-  optlist, args = getopt.getopt(sys.argv[1:], 'n:t:r:o:dphT:s')
+  # Run tcpdump on all hosts?
+  s.tcpdump = False
+
+  optlist, args = getopt.getopt(sys.argv[1:], 'n:t:r:o:dphT:', [
+    'stop', 'tcpdump', 'dryrun',
+    'test=', 'help', 
+  ])
   for (o,a) in optlist:
     if o == '-n':
       s.n = int(a)
@@ -45,15 +52,17 @@ def main():
       s.outputfile = a
     if o == '-d':
       s.detach = True
-    if o == '-p':
+    if o == '--dryrun':
       s.dryrun = True
-    if o == '-h':
+    if o == '-h' or o == '--help':
       printhelp()
       sys.exit(0)
-    if o == '-T':
+    if o == '--test':
       s.test = a
-    if o == '-s':
+    if o == '--stop':
       s.stop = True
+    if o == '--tcpdump':
+      s.tcpdump = True
 
   if s.outputfile == '':
     s.outputfile = 'results-%d-%d.html' % (s.n, s.t)

@@ -166,6 +166,7 @@ class Mininet:
     l = len(self.hosts)
     while True and not settings.dryrun:
       print 'Waiting for hosts to boot..', 
+      sys.stdout.flush()
       sleep(5)
       sys.stdout.flush()
       n = int(shell_output('vzlist -a | grep running | wc -l').strip())

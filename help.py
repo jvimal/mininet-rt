@@ -10,11 +10,12 @@ def printhelp():
     -o file  :  Output from tests get written to file
                 default: results-$n-$t.html
     -d       :  Start the hosts, configure the network and exit
-    -p       :  Just print the commands (a dry-run)
-    -T       :  Which test to run; 
+    --dryrun :  Just print the commands
+    --test   :  Which test to run; 
                 Default: none
                 Available: iperf
-    -s       :  Stop the containers and bring down the network
-    -h       :  Print this help
+    --stop   :  Stop the containers and bring down the network
+    -h,--help:  Print this help
+    --tcpdump:  Run tcpdump on all hosts (not available now)
 """ % (sys.argv[0])
 
