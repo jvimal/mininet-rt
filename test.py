@@ -39,7 +39,7 @@ def main():
 
   optlist, args = getopt.getopt(sys.argv[1:], 'n:t:r:o:dphT:', [
     'stop', 'tcpdump', 'dryrun',
-    'test=', 'help', 
+    'test=', 'help', 'cpulimit='
   ])
   for (o,a) in optlist:
     if o == '-n':
@@ -63,6 +63,9 @@ def main():
       s.stop = True
     if o == '--tcpdump':
       s.tcpdump = True
+    if o == '--cpulimit':
+      s.cpulimit = int(a)
+
   if s.outputfile == '':
     s.outputfile = 'results-%d-%d.html' % (s.n, s.t)
   

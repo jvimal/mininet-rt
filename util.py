@@ -7,6 +7,9 @@ from subprocess import call, check_call, Popen, PIPE, STDOUT
 
 from log import lg
 
+def no_cores():
+  return 2
+
 def run( cmd ):
     """Simple interface to subprocess.call()
        cmd: list of command params"""

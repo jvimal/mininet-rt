@@ -13,7 +13,7 @@ Networking is setup as follows:
 """
 
 import os, sys
-from util import run, shell_output
+from util import run, shell_output, no_cores
 from time import sleep
 import settings
 
@@ -126,7 +126,9 @@ class Mininet:
   def configure_rates(self):
     # all veth<id>.0 devices get 100Mbps
     # same for all switches
-    
+    if self.rate is None:
+      return
+
     cmd("tc qdisc del dev veth1.0 root")
     cmd("tc qdisc add dev veth1.0 root handle 1:0 htb default 10")
     cmd("iptables -t mangle -F")
@@ -152,6 +154,22 @@ class Mininet:
       cmd("tc qdisc add dev veth%d.0 parent 1:%d handle %d:0 sfq perturb 10" % (1, i+l, i+l))
 
 
+  def configure_cpu_limits(self):
+    if settings.cpulimit is None:
+      return
+    
+    sane_limit = (no_cores() * 100 - 50) / len(self.hosts)
+    if sane_limit <= 0:
+      sane_limit = 1
+      print '*** Warning; looks like you are running too many hosts'
+
+    settings.cpulimit = min(settings.cpulimit, sane_limit)
+    # Only host CPU limiting supported
+    # for now; switch CPU limiting comes
+    # later
+    for ctid in xrange(1, len(self.hosts)+1):
+      cmd("vzctl set %d --cpulimit %d" % (ctid, settings.cpulimit))
+
   def start(self):
     """ Boot up all the hosts """
     self.build_topology(self.topo)
@@ -159,8 +177,8 @@ class Mininet:
     self.configure_hosts()
     # Wait for hosts to boot up
     self.wait_for_hosts()
-    if self.rate is not None:
-      self.configure_rates()
+    self.configure_rates()
+    self.configure_cpu_limits()
 
   def wait_for_hosts(self):
     l = len(self.hosts)
