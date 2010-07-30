@@ -4,6 +4,7 @@
 """
 from time import sleep
 import html
+from util import shell_output
 
 def log(s):
   print s
@@ -88,11 +89,17 @@ class IPerfOneToAllTest:
       # get loss packets
       losses[h.id]={}
       lines = map(lambda x: x.strip().split(' '), 
-        h.open('proc/net/netstat').readlines()[0:2])
+        shell_output('vzctl exec %d cat /proc/net/netstat' % h.id).split('\n')[0:2])
+        #h.open('proc/net/netstat').readlines()[0:2])
+        # BUG!! theres a discrepancy between the values
+        # read from /proc/net/netstat from inside the container
+        # and /mountpoint/proc/net/netstat! 
+        # Damn :p
 
       for k,v in zip(lines[0], lines[1]):
         if k in ['TCPLoss', 'TCPTimeouts']:
           losses[h.id][k]=v
+      losses[h.id]['debug']=zip(lines[0],lines[1])
       
     # put values together
     for t in xrange(0,self.t):
