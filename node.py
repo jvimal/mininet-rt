@@ -109,11 +109,10 @@ class Switch(Node):
     self.ifaces.append(iface)
 
   def connect_switch(self, sw):
-    name = '%s.%s' % (self.name, sw.name)
-    peer = '%s.%s' % (sw.name, self.name)
+    name = '%s%s' % (self.name, sw.name)
+    peer = '%s%s' % (sw.name, self.name)
     #this command works ONLY on kernel versions 2.6.28+,
     # as it requires the veth module support.
-
     if settings.veth:
       cmd("ip link add name %s type veth peer name %s" % (name, peer))
 
