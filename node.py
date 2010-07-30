@@ -121,7 +121,7 @@ class Switch(Node):
     # support, we should have something similar setup
     # patch here: http://lwn.net/Articles/229677/
     # i'll arrange a standalone patch shortly
-    else if settings.etun:
+    elif settings.etun:
       cmd("echo -n '%s,%s' > /sys/module/etun/parameters/newif" % (name, peer))
     else:
       print '*** Cannot proceed.  Need support for virtual ethernet pair'
