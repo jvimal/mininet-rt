@@ -86,12 +86,14 @@ def main():
       x = int(raw_input())
       if x == 1:
         break
-
-    res = it.end()
-  
-    html.html(s.outputfile, html.comments([
-      'topology:' + '%s' % (topo),
-    ]) + res)
+    
+    if len(s.test):
+      res = it.end()
+    
+      html.html(s.outputfile, html.comments([
+        'test: %s' % (s.test),
+        'topology: %s' % (topo),
+      ]) + res)
 
   m.stop()
   #m.destroy()
