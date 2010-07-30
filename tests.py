@@ -86,15 +86,14 @@ class IPerfOneToAllTest:
           break
 
       # get loss packets
-      """
       losses[h.id]={}
       lines = map(lambda x: x.strip().split(' '), 
-        h.open('proc/1/net/netstat').readlines()[0:2])
+        h.open('proc/net/netstat').readlines()[0:2])
 
       for k,v in zip(lines[0], lines[1]):
         if k in ['TCPLoss', 'TCPTimeouts']:
           losses[h.id][k]=v
-      """
+      
     # put values together
     for t in xrange(0,self.t):
       bandwidth.append(','.join(bs[t]))
@@ -109,7 +108,7 @@ class IPerfOneToAllTest:
       ["rollPeriod:1", "showRoller:true"])
 
     # this is related to the netstat problem
-    # ret += html.join([html.tag("h3", "TCP stats"), html.table(losses)])
+    ret += html.join([html.tag("h3", "TCP stats"), html.table(losses)])
     return ret
 
   def end(self):
