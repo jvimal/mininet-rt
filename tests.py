@@ -86,6 +86,7 @@ class IPerfOneToAllTest:
           break
 
       # get loss packets
+      """
       losses[h.id]={}
       lines = map(lambda x: x.strip().split(' '), 
         h.open('proc/1/net/netstat').readlines()[0:2])
@@ -93,7 +94,7 @@ class IPerfOneToAllTest:
       for k,v in zip(lines[0], lines[1]):
         if k in ['TCPLoss', 'TCPTimeouts']:
           losses[h.id][k]=v
-
+      """
     # put values together
     for t in xrange(0,self.t):
       bandwidth.append(','.join(bs[t]))
