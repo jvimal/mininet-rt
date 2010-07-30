@@ -108,7 +108,8 @@ class IPerfOneToAllTest:
       "TCP Window size hosts",
       ["rollPeriod:1", "showRoller:true"])
 
-    ret += html.join([html.tag("h3", "TCP stats"), html.table(losses)])
+    # this is related to the netstat problem
+    # ret += html.join([html.tag("h3", "TCP stats"), html.table(losses)])
     return ret
 
   def end(self):
