@@ -150,7 +150,7 @@ class Switch(Node):
       if settings.veth:
         cmd("ip link del dev %s" % iface)
       else:
-        cmd("echo -n '%s' > /sys/module/etun/parameters/delif")
+        cmd("echo -n '%s' > /sys/module/etun/parameters/delif" % iface)
 
     cmd("ifconfig %s down" % self.name)
     cmd("brctl delbr %s" % self.name)
