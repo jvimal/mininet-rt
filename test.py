@@ -48,6 +48,8 @@ def main():
       s.t = int(a)
     if o == '-r':
       s.rate = a
+      if a.lower() == 'none':
+        s.rate = None
     if o == '-o':
       s.outputfile = a
     if o == '-d':
@@ -69,7 +71,7 @@ def main():
   if s.outputfile == '':
     s.outputfile = 'results-%d-%d.html' % (s.n, s.t)
   
-  topo = LinearTopo(s.n)
+  topo = SingleSwitchTopo(s.n)
   m = Mininet(HostClass=Host, SwitchClass=Switch, topo=topo, rate=s.rate)
   m.start()
 
