@@ -63,7 +63,6 @@ def main():
       s.stop = True
     if o == '--tcpdump':
       s.tcpdump = True
-
   if s.outputfile == '':
     s.outputfile = 'results-%d-%d.html' % (s.n, s.t)
   

@@ -14,3 +14,6 @@ test = ''
 stop = False
 # Unused as of now
 tcpdump = False
+veth = False
+etun = True
+

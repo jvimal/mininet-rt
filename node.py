@@ -111,7 +111,22 @@ class Switch(Node):
   def connect_switch(self, sw):
     name = '%s.%s' % (self.name, sw.name)
     peer = '%s.%s' % (sw.name, self.name)
-    cmd("ip link add name %s type veth peer name %s" % (name, peer))
+    #this command works ONLY on kernel versions 2.6.28+,
+    # as it requires the veth module support.
+
+    if settings.veth:
+      cmd("ip link add name %s type veth peer name %s" % (name, peer))
+
+    # with a patched 2.6.18 kernel having etun
+    # support, we should have something similar setup
+    # patch here: http://lwn.net/Articles/229677/
+    # i'll arrange a standalone patch shortly
+    else if settings.etun:
+      cmd("echo -n '%s,%s' > /sys/module/etun/parameters/newif" % (name, peer))
+    else:
+      print '*** Cannot proceed.  Need support for virtual ethernet pair'
+      print '*** to create (%s,%s)' % (name, peer)
+
     cmd("ifconfig %s up" % name)
     cmd("ifconfig %s up" % peer)
     cmd("brctl addif %s %s" % (self.name, name))
@@ -131,7 +146,11 @@ class Switch(Node):
     # The hosts will take care of the rest
     for iface in self.created:
       cmd("ifconfig %s down" % iface)
-      cmd("ip link del dev %s" % iface)
+      
+      if settings.veth:
+        cmd("ip link del dev %s" % iface)
+      else:
+        cmd("echo -n '%s' > /sys/module/etun/parameters/delif")
 
     cmd("ifconfig %s down" % self.name)
     cmd("brctl delbr %s" % self.name)
