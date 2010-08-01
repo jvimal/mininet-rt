@@ -1,0 +1,84 @@
+Full compilation instructions:
+-----------------------------
+
+Download the openvz-patched kernel from
+http://git.openvz.org/?p%3Dlinux-2.6.18-openvz;a%3Dsummary
+
+git clone git://git.openvz.org/pub/linux-2.6.18-openvz
+Apply the etun patch
+cd mininet-rt/patches
+follow README
+
+Configure the kernel:
+---------------------
+
+cd linux-2.6.18
+make menuconfig
+Make sure the following options are selected:
+
+Filesystem
+\_ [*] Second extended fs support (CONFIG_EXT2_FS)
+\_ [*] Ext3 journalling file system support (CONFIG_EXT3_FS)
+\_ [M] Quota Support (CONFIG_QUOTA)
+\_ [*] Compatibility with older quotactl interface (CONFIG_QUOTA_COMPAT)
+\_ [*]Quota format v2 support (CONFIG_QFMT_V2)
+\_ [*] VPS filesystem (CONFIG_SIM_FS)
+\_ [M] Virtuozzo Disk Quota support (CONFIG_VZ_QUOTA)
+\-> [*] Per-user and per-group quota in Virtuozzo quota partitions
+(VZ_QUOTA_UGID)
+
+Security
+\->[ ] Enable different security models
+
+OpenVZ ... (what else :-)
+\_[*] Virtual Environment support (CONFIG_VE)
+\_ <M> VE calls interface (CONFIG_VE_CALLS)
+\_ <M> VE networking (CONFIG_VE_NETDEV)
+\_ <M> Virtual ethernet device (CONFIG_VE_ETHDEV)
+\_ <M> VE device (CONFIG_VZ_DEV)
+\_ [*] VE netfiltering (CONFIG_VE_IPTABLES)
+\_ <M> VE watchdog module (CONFIG_VZ_WDOG)
+\_ <M> Checkpointing & restoring Virtual Environments (CONFIG_VZ_CHECKPOINT)
+
+User resources ... (User Beancounters)
+\_ [*] Enable user resource accounting (CONFIG_USER_RESOURCE)
+\_ [*] Account physical memory usage ( CONFIG_USER_RSS_ACCOUNTING)
+\_ [*] Account disk IO (CONFIG_UBC_IO_ACCT)
+\_ [*] Account swap usage (CONFIG_USER_SWAP_ACCOUNTING)
+\_ [*] Report resource usage in /proc (CONFIG_USER_RESOURCE_PROC)
+\_ [*] User resources debug features (CONFIG_UBC_DEBUG)
+\_ [*] Debug kmemsize with cache counters (CONFIG_UBC_DEBUG_KMEM)
+
+ETUN
+-> Device Drivers
+  -> Network device support
+      ->Ethernet tunnel device driver support
+
+Compile the kernel:
+-------------------
+
+export CONCURRENCY_LEVEL=9
+fakeroot make-kpkg --initrd --append-to-version=-openvz-etun kernel-image kernel-headers
+
+Install the kernel:
+-------------------
+
+sudo dpkg -i linux-image-2.6.18-openvz-etun.deb
+sudo dpkg -i linux-headers-2.6.18-openvz-etun.deb
+cd /boot
+sudo mkinitramfs -k -o initrd.img-2.6.18-openvz-etun 2.6.18-openvz-etun
+
+Update grub:
+------------
+
+sudo update-grub2
+Check boot order from /boot/grub/grub.cfg and /etc/default/grub
+
+Links:
+------
+
+http://wiki.openvz.org/Compiling_the_OpenVZ_kernel_(the_Debian_way)
+https://help.ubuntu.com/community/Kernel/Compile
+http://wiki.openvz.org/Download/kernel
+http://git.openvz.org/?p%3Dlinux-2.6.18-openvz;a%3Dsummary
+
