@@ -1,0 +1,3 @@
+cd linux-2.6.18
+patch -p1 < patch-ovz028stab056.1-combined
+patch -p1 < etunpatch-2.6.18-openvz.diff
