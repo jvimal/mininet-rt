@@ -4,7 +4,7 @@ In contrast to mininet, there are no Switches
 or Controller nodes.  Just an end host.
 """
 import os
-from util import run, ipStr, shell_cmd
+from util import run, ipStr, shell_cmd, Command
 fileopen = open
 from cmd import Cmd
 import settings
@@ -64,6 +64,16 @@ class Host(Node):
     cmd("vzctl exec %d '%s'" % (self.id, c))
     #self.shell.cmd(c)
   
+  def send_command(self, c):
+    """
+      send command c to this particular host
+      and return a "command" handle that can 
+      later be used to fetch output
+
+      this is non blocking
+    """
+    return Command(["vzctl", "exec2", "%d" % self.id, c])
+
   def open(self, file):
     # check if root fs is mounted.  if it is, then return 
     # that file.  else return from private dir
