@@ -15,6 +15,8 @@ def cmd(s):
     shell_cmd(s)
 
 class Node(object):
+  def __init__(self,p):
+    pass
   def start(self):
     pass
 
@@ -26,6 +28,12 @@ class Node(object):
 
   def destroy(self):
     pass
+
+class Controller(Node):
+  pass
+
+class RemoteController(Node):
+  pass
 
 
 class Host(Node):
@@ -64,6 +72,9 @@ class Host(Node):
     cmd("vzctl exec %d '%s'" % (self.id, c))
     #self.shell.cmd(c)
   
+  def sendCmd(self, c):
+    return self.send_command(c)
+
   def send_command(self, c):
     """
       send command c to this particular host
@@ -98,6 +109,8 @@ class Host(Node):
     pass
 
   def destroy(self):
+    """Destroy's the host's root directory.
+    Please don't do it unless needed."""
     cmd("vzctl destroy %d" % self.id)
 
 

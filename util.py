@@ -61,6 +61,8 @@ class Command:
   def signal(self, signal):
     return self.p.send_signal(signal)
 
+  def waitOutput(self):
+    return self.read_full()
 
 def run( cmd ):
     """Simple interface to subprocess.call()

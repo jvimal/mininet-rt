@@ -13,9 +13,16 @@ Networking is setup as follows:
 """
 
 import os, sys
+
 from util import run, shell_output, no_cores, fixLimits
+from node import Host, Switch
+
 from time import sleep
 import settings
+
+
+init = fixLimits
+
 
 def cmd(s):
   print '# %s' % s
@@ -24,15 +31,16 @@ def cmd(s):
 
 class Mininet:
 
-  def __init__(self, HostClass, SwitchClass, topo, rate=None):
+  def __init__(self, topo, controller, switch=Switch, rate=None):
     if os.getuid() != 0:
       print 'Please run as root.'
       sys.exit(-1)
     
-    util.fixLimits()
-
-    self.host = HostClass
-    self.switch = SwitchClass
+    fixLimits()
+    # use our own host definition
+    self.host = Host
+    # but user supplied switch :p
+    self.switch = switch
     
     self.next_host_id = 1
     self.next_switch_id = 1

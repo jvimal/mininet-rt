@@ -8,7 +8,7 @@ or switches.
 """
 
 class Node:
-  def __init__(self, id, is_switch=False):
+  def __init__(self, id=None, is_switch=False):
     self.id = id
     self.is_switch = is_switch
   
@@ -19,13 +19,29 @@ class Topo(object):
   def __init__(self):
     self.nodes = []
     self.edges = []
+    self.ids_to_nodes = {}
 
   def add_node(self, n):
     self.nodes.append(n)
+    self.ids_to_nodes[n.id] = n
+  
+  def add_node(self, id, node):
+    """For compatibility with mininet"""
+    n = Node(id=id, is_switch=node.is_switch)
+    self.nodes.append(n)
+    self.ids_to_nodes[id] = n
 
   def add_edge(self, u, v):
-    self.edges.append((u,v))
+    """Old mininet uses numbers to identify nodes.
+    Is better to use the node class itself?"""
+    if type(u) == type(1) and type(v) == type(1):
+      self.edges.append((self.ids_to_nodes[u], self.ids_to_nodes[v]))
+    else:
+      self.edges.append((u,v))
 
+  def enable_all(self):
+    """Compatibility"""
+    pass
 
 class SingleSwitchTopo(Topo):
   def __init__(self, k=2):
