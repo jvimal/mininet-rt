@@ -18,7 +18,7 @@ class Command:
 
   def read_full(self):
     # warning, will BLOCK until we read all output
-    return self.p.communicate()
+    return self.p.communicate()[0]
 
   def readn(self, n):
     toread = n
