@@ -82,3 +82,8 @@ https://help.ubuntu.com/community/Kernel/Compile
 http://wiki.openvz.org/Download/kernel
 http://git.openvz.org/?p%3Dlinux-2.6.18-openvz;a%3Dsummary
 
+Note:
+------
+gcc4.4 doesn't like some of the kernel code. Either change the code to meet
+gcc4.4 requirements, or use gcc <=4.3
+
