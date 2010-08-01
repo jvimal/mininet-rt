@@ -13,7 +13,7 @@ Networking is setup as follows:
 """
 
 import os, sys
-from util import run, shell_output, no_cores
+from util import run, shell_output, no_cores, fixLimits
 from time import sleep
 import settings
 
@@ -28,6 +28,8 @@ class Mininet:
     if os.getuid() != 0:
       print 'Please run as root.'
       sys.exit(-1)
+    
+    util.fixLimits()
 
     self.host = HostClass
     self.switch = SwitchClass
