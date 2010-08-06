@@ -113,6 +113,92 @@ class Host(Node):
     Please don't do it unless needed."""
     cmd("vzctl destroy %d" % self.id)
 
+class UserSwitch(Node):
+  """ Ideally this should be a subclass of a switch class
+  but not for now."""
+  
+  def __init__(self,id):
+    self.name  = 'sw%d' % (id)
+    self.id = id
+    # container's id
+    self.cid = self.id + settings.offset_switch_id
+    self.created = []
+    self.create()
+    self.ifaces = []
+    self.bridgewires = []
+
+  def create(self):
+    """This will create a userspace switch, which is nothing 
+    but a container with a switch process in it"""
+    cmd("vzctl create %d --hostname %s --ostemplate debian-5.0-x86_64" % (self.aid, self.name))
+
+  def add_iface(self, node):
+    iface = node.ifaces[0][0]
+    # add a corresponding interface to our switch
+    # let's name it the same because, it doesn't matter
+    # and it's useful to debug
+    # it will be visible as veth<container_id>.<n> to the outside world
+    outside_name = 'veth%d.%d' % (self.cid, len(self.ifaces))
+    cmd("vzctl set %d --netif_add %s" % (self.cid, iface))
+    self.created.append(iface)
+
+    bridgewire_name = 'br%d' % next_bridgewire_id()
+    self.bridgewires.append(bridgewire_name)
+
+    cmd("brctl addbr %s" % bridgewire_name)
+    # bridge the iface and our **outside** iface
+    # this is like the wire between the host and the switch
+    cmd("brctl addif %s %s" % (bridgewire_name, outside_name))
+    cmd("brctl addif %s %s" % (bridgewire_name, iface))
+    
+    # TODO try --dryrun and see if this actually works
+    self.ifaces.append(iface)
+
+  def connect_switch(self, sw):
+    # pretty much the same as the commands in the
+    # connect_switch function in Switch() class, but for 
+    # one last command
+    # TODO have a new command called create_veth_pair()
+    name = '%s%s' % (self.name, sw.name)
+    peer = '%s%s' % (sw.name, self.name)
+    if settings.veth:
+      cmd("ip link add name %s type veth peer name %s" %(name, peer))
+    elif settings.etun:
+      cmd("echo -n '%s,%s' > /sys/module/etun/parameters/newif" %(name, peer))
+    else:
+      print '** WAAAAAAAA! zzzZZzZzz..'
+      sleep(100000)
+    
+    cmd("ifconfig %s up" % name)
+    cmd("ifconfig %s up" % peer)
+    bridgewire_name = 'br%d' % next_bridgewire_id()
+    cmd("brctl addbr %s" % bridgewire_name)
+    cmd("brctl addif %s %s" % (bridgewire_name, name))
+    cmd("brctl addif %s %s" % (bridgewire_name, peer))
+    
+    self.bridgewires.append(bridgewire_name)
+
+  def configure(self):
+    for iface in self.created:
+      cmd("ifconfig %s 0" % iface)
+      cmd("ifconfig %s up" % iface)
+    
+
+  def cmd(self,c):
+    cmd("vzctl exec %d '%s'" % (self.id, c))
+
+  def start(self):
+    self.configure()
+    # should use the host's command interface to 
+    # start the of switch process
+
+  def stop(self):
+    for iface in self.
+    pass
+
+  def destroy(self):
+    # will remove all its files
+    pass
 
 class Switch(Node):
   def __init__(self,id):
