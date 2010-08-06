@@ -202,7 +202,7 @@ class Mininet:
       sys.stdout.flush()
       sleep(5)
       sys.stdout.flush()
-      n = int(shell_output('vzlist -a | grep running | wc -l').strip())
+      n = int(shell_output('vzlist -a | egrep "running|mounted" | wc -l').strip())
       print '%d/%d' % (n, l)
       if n == l:
         break
