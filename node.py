@@ -9,8 +9,12 @@ fileopen = open
 from cmd import Cmd
 import settings
 
-def cmd(s):
-  print '# %s' % s
+def cmd(s, comment=None):
+  if comment is not None:
+    comment = '(%s)' % comment
+  else:
+    comment = ''
+  print '# %s %s' % (s, comment)
   if not settings.dryrun:
     shell_cmd(s)
 
@@ -113,6 +117,13 @@ class Host(Node):
     Please don't do it unless needed."""
     cmd("vzctl destroy %d" % self.id)
 
+
+_next_bridgewire_id=0
+def next_bridgewire_id():
+  global _next_bridgewire_id
+  _next_bridgewire_id += 1
+  return _next_bridgewire_id
+
 class UserSwitch(Node):
   """ Ideally this should be a subclass of a switch class
   but not for now."""
@@ -130,7 +141,7 @@ class UserSwitch(Node):
   def create(self):
     """This will create a userspace switch, which is nothing 
     but a container with a switch process in it"""
-    cmd("vzctl create %d --hostname %s --ostemplate debian-5.0-x86_64" % (self.aid, self.name))
+    cmd("vzctl create %d --hostname %s --ostemplate debian-5.0-x86_64" % (self.cid, self.name))
     # useless thing, avoid copying again and again
     # maybe hook to a settings variable
     # TODO!! 
@@ -146,10 +157,11 @@ class UserSwitch(Node):
   def create_iface(self, insidename):
     """Just create an iface for the container and return its global
     name."""
-    cmd("vzctl set %d --netif_add %s" % (self.cid, insidename))
-    outside_name = 'veth%d.%d' % (self.cid, len(self.ifaces))
+    cmd("vzctl set %d --netif_add %s" % (self.cid, insidename), 
+      "it's inside!")
     self.ifaces.append(insidename)
-    return outsidename
+    outside_name = 'veth%d.%d' % (self.cid, len(self.ifaces))
+    return outside_name
 
   def add_iface(self, node):
     """it's actually connect host's iface (node), bad choice of 
@@ -159,7 +171,7 @@ class UserSwitch(Node):
     # let's name it the same because, it doesn't matter
     # and it's useful to debug
     # it will be visible as veth<container_id>.<n> to the outside world
-    outside_name = self.create_iface(iface)
+    outside_name = self.create_iface('in'+iface)
     
     bridgewire_name = 'br%d' % next_bridgewire_id()
     # this is the only new thing we've created.. a br<id>
@@ -186,13 +198,9 @@ class UserSwitch(Node):
     self.bridgewires.append(bridgewire_name)
     
   def configure(self):
-    for iface in self.created:
-      cmd("ifconfig %s 0" % iface)
-      cmd("ifconfig %s up" % iface)
     for br in self.bridgewires:
-      cmd("ifconfig %s 0" % br)
       cmd("ifconfig %s up" % br)
-
+      cmd("ifconfig %s 0" % br)
     # let's initialise our own loopback
     # needed for the controller
     # let's just forget the case of having a
@@ -200,24 +208,36 @@ class UserSwitch(Node):
     # has its own controller ;) 
     # need to worry about ip address and all that.. :-/
     self.cmd("ifconfig lo up")
+    for iface in self.ifaces:
+      self.cmd("ifconfig %s up" % iface)
     
-  def cmd(self,c):
-    cmd("vzctl exec %d '%s'" % (self.id, c))
+    # make the tun device
+    self.cmd("mkdir -p /dev/net")
+    self.cmd("mknod /dev/net/tun c 10 200","enabling tun/tap for container")
+    self.cmd("chmod 600 /dev/net/tun")
+
+    self.cmd("controller -v ptcp: 2>&1 1> /tmp/controller.log &")
+    intfs = ','.join( self.ifaces )
+    self.cmd("ofdatapath --no-slicing -i %s punix:/tmp/ofsock 2>&1 1> /tmp/ofdp.log &" % intfs)
+    self.cmd("ofprotocol unix:/tmp/ofsock tcp:127.0.0.1 2>&1 1> /tmp/ofp.log &")
+  
+  def cmd(self,c, comment=None):
+    cmd("vzctl exec %d '%s'" % (self.cid, c), comment)
 
   def start(self):
-    self.configure()
     # should use the host's command interface to 
     # start the of switch process
     # self.cmd("ofprotocol blah blah")
-    self.cmd("controller -v ptcp: 2>&1 1> /tmp/controller.log &")
-    intfs = ','.join( self.ifaces )
-    self.cmd("ofdatapath -i %s punix:/tmp/ofsock 2>&1 1> /tmp/ofdp.log &" % intfs)
-    self.cmd("ofprotocol unix:/tmp/ofsock tcp:127.0.0.1 2>&1 1> /tmp/ofp.log &")
+    cmd("vzctl set %d --devices c:10:200:rw" % self.cid)
+    cmd("vzctl set %d --capability net_admin:on" % self.cid)
+    cmd("vzctl start %d" % (self.cid))
 
   def stop(self):
     for br in self.bridgewires:
       cmd("ifconfig %s down" % br)
     # no veths created...
+    # but containers were created
+    cmd("vzctl stop %d" % self.cid)
 
   def destroy(self):
     # will remove all its files

@@ -1,6 +1,6 @@
 
 from net import Mininet
-from node import Host, Switch
+from node import Host, Switch, UserSwitch
 from topo import SingleSwitchTopo, LinearTopo
 from tests import IPerfOneToAllTest, CPUStressTest
 
@@ -72,7 +72,7 @@ def main():
     s.outputfile = 'results-%d-%d.html' % (s.n, s.t)
   
   topo = SingleSwitchTopo(s.n)
-  m = Mininet(HostClass=Host, SwitchClass=Switch, topo=topo, rate=s.rate)
+  m = Mininet(switch=UserSwitch, topo=topo, controller=None, rate=s.rate)
   m.start()
 
   if s.stop:

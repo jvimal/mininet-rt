@@ -21,7 +21,7 @@ class Topo(object):
     self.edges = []
     self.ids_to_nodes = {}
 
-  def add_node(self, n):
+  def add_node_2(self, n):
     self.nodes.append(n)
     self.ids_to_nodes[n.id] = n
   
@@ -49,12 +49,12 @@ class SingleSwitchTopo(Topo):
     self.k = k
     s = Node(1, is_switch=True)
 
-    self.add_node(s)
+    self.add_node_2(s)
     hosts = range(2, k+2)
 
     for h in hosts:
       n = Node(h)
-      self.add_node(n)
+      self.add_node_2(n)
       self.add_edge(n, s)
   
   def __str__(self):

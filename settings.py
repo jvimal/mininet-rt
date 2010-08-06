@@ -17,4 +17,6 @@ tcpdump = False
 veth = False
 etun = True
 cpulimit = None
-
+# switch container ids will start from 1000+
+# 1001, ...
+offset_switch_id = 1000

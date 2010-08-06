@@ -15,7 +15,7 @@ Networking is setup as follows:
 import os, sys
 
 from util import run, shell_output, no_cores, fixLimits
-from node import Host, Switch
+from node import Host, Switch, UserSwitch
 
 from time import sleep
 import settings
@@ -101,6 +101,7 @@ class Mininet:
     for n in topo.nodes:
       if n.is_switch:
         s = self.add_switch()
+        s.start()
         self.ids_to_nodes[n.id] = s
       else:
         h = self.add_host()
@@ -186,14 +187,18 @@ class Mininet:
     self.configure_switches()
     self.configure_hosts()
     # Wait for hosts to boot up
+    # also waits for switches... TODO: rename this function name
     self.wait_for_hosts()
     self.configure_rates()
     self.configure_cpu_limits()
 
   def wait_for_hosts(self):
     l = len(self.hosts)
+    if self.switch == UserSwitch:
+      l += len(self.switches)
+
     while True and not settings.dryrun:
-      print 'Waiting for hosts to boot..', 
+      print 'Waiting for hosts/switches to boot..', 
       sys.stdout.flush()
       sleep(5)
       sys.stdout.flush()
