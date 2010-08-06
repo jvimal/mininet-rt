@@ -131,18 +131,38 @@ class UserSwitch(Node):
     """This will create a userspace switch, which is nothing 
     but a container with a switch process in it"""
     cmd("vzctl create %d --hostname %s --ostemplate debian-5.0-x86_64" % (self.aid, self.name))
+    # useless thing, avoid copying again and again
+    # maybe hook to a settings variable
+    # TODO!! 
+    files_to_copy = [
+      "/home/jvimal/openflow/controller/controller",
+      "/home/jvimal/openflow/udatapath/ofdatapath",
+      "/home/jvimal/openflow/secchan/ofprotocol",
+    ]
+    dst_dir = "/var/lib/vz/private/%d/bin" % self.cid
+    for f in files_to_copy:
+      cmd("cp %s %s" % (f, dst_dir))
+
+  def create_iface(self, insidename):
+    """Just create an iface for the container and return its global
+    name."""
+    cmd("vzctl set %d --netif_add %s" % (self.cid, insidename))
+    outside_name = 'veth%d.%d' % (self.cid, len(self.ifaces))
+    self.ifaces.append(insidename)
+    return outsidename
 
   def add_iface(self, node):
+    """it's actually connect host's iface (node), bad choice of 
+    naming this function. TODO: should change this!"""
     iface = node.ifaces[0][0]
     # add a corresponding interface to our switch
     # let's name it the same because, it doesn't matter
     # and it's useful to debug
     # it will be visible as veth<container_id>.<n> to the outside world
-    outside_name = 'veth%d.%d' % (self.cid, len(self.ifaces))
-    cmd("vzctl set %d --netif_add %s" % (self.cid, iface))
-    self.created.append(iface)
-
+    outside_name = self.create_iface(iface)
+    
     bridgewire_name = 'br%d' % next_bridgewire_id()
+    # this is the only new thing we've created.. a br<id>
     self.bridgewires.append(bridgewire_name)
 
     cmd("brctl addbr %s" % bridgewire_name)
@@ -151,39 +171,36 @@ class UserSwitch(Node):
     cmd("brctl addif %s %s" % (bridgewire_name, outside_name))
     cmd("brctl addif %s %s" % (bridgewire_name, iface))
     
-    # TODO try --dryrun and see if this actually works
-    self.ifaces.append(iface)
-
   def connect_switch(self, sw):
-    # pretty much the same as the commands in the
-    # connect_switch function in Switch() class, but for 
-    # one last command
-    # TODO have a new command called create_veth_pair()
-    name = '%s%s' % (self.name, sw.name)
-    peer = '%s%s' % (sw.name, self.name)
-    if settings.veth:
-      cmd("ip link add name %s type veth peer name %s" %(name, peer))
-    elif settings.etun:
-      cmd("echo -n '%s,%s' > /sys/module/etun/parameters/newif" %(name, peer))
-    else:
-      print '** WAAAAAAAA! zzzZZzZzz..'
-      sleep(100000)
-    
-    cmd("ifconfig %s up" % name)
-    cmd("ifconfig %s up" % peer)
+    # this becomes simple actually... 
+    # no need for veth pair as in the normal switch case
+    # just bridge the two interfaces that the switches anyway have!
     bridgewire_name = 'br%d' % next_bridgewire_id()
     cmd("brctl addbr %s" % bridgewire_name)
-    cmd("brctl addif %s %s" % (bridgewire_name, name))
-    cmd("brctl addif %s %s" % (bridgewire_name, peer))
+    # our interface goes to switch sw
+    our_their_outside = self.create_iface(sw.name)
+    their_our_outside = sw.create_iface(self.name)
+    cmd("brctl addif %s %s" % (bridgewire_name, our_their_outside))
+    cmd("brctl addif %s %s" % (bridgewire_name, their_our_outside))
     
     self.bridgewires.append(bridgewire_name)
-
+    
   def configure(self):
     for iface in self.created:
       cmd("ifconfig %s 0" % iface)
       cmd("ifconfig %s up" % iface)
-    
+    for br in self.bridgewires:
+      cmd("ifconfig %s 0" % br)
+      cmd("ifconfig %s up" % br)
 
+    # let's initialise our own loopback
+    # needed for the controller
+    # let's just forget the case of having a
+    # single controller. right now, every switch
+    # has its own controller ;) 
+    # need to worry about ip address and all that.. :-/
+    self.cmd("ifconfig lo up")
+    
   def cmd(self,c):
     cmd("vzctl exec %d '%s'" % (self.id, c))
 
@@ -191,14 +208,20 @@ class UserSwitch(Node):
     self.configure()
     # should use the host's command interface to 
     # start the of switch process
+    # self.cmd("ofprotocol blah blah")
+    self.cmd("controller -v ptcp: 2>&1 1> /tmp/controller.log &")
+    intfs = ','.join( self.ifaces )
+    self.cmd("ofdatapath -i %s punix:/tmp/ofsock 2>&1 1> /tmp/ofdp.log &" % intfs)
+    self.cmd("ofprotocol unix:/tmp/ofsock tcp:127.0.0.1 2>&1 1> /tmp/ofp.log &")
 
   def stop(self):
-    for iface in self.
-    pass
+    for br in self.bridgewires:
+      cmd("ifconfig %s down" % br)
+    # no veths created...
 
   def destroy(self):
     # will remove all its files
-    pass
+    cmd("vzctl destroy %d" % self.cid)
 
 class Switch(Node):
   def __init__(self,id):
