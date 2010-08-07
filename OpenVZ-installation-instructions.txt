@@ -6,8 +6,19 @@ http://git.openvz.org/?p%3Dlinux-2.6.18-openvz;a%3Dsummary
 
 git clone git://git.openvz.org/pub/linux-2.6.18-openvz
 Apply the etun patch
+Apply the enable-promisc-default patch
 cd mininet-rt/patches
 follow README
+
+udev/tmpfs/devtmpfs fail to mount the /dev directory properly
+on boot.  You'll have to create your own initrd, or use the one
+provided.  It has an updated init script that will create the 
+necessary devices, with the right permissions:
+* Hard disk (sda, sda1, ...)
+* Random number (random, urandom) -- SSH needs this, else it
+  will not start
+* ttys (ptmx, tty$i, ..) -- else you won't be able to login
+  via ssh!
 
 Configure the kernel:
 ---------------------

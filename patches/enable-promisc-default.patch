@@ -1,0 +1,21 @@
+diff --git a/drivers/net/veth.c b/drivers/net/veth.c
+index 701a1e0..ce89a76 100644
+--- a/drivers/net/veth.c
++++ b/drivers/net/veth.c
+@@ -280,6 +280,7 @@ static int veth_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	if (unlikely(rcv->owner_env->disable_net))
+ 		goto outf;
++  #if 0
+ 	/* Filtering */
+ 	if (ve_is_super(dev->owner_env) &&
+ 			!veth_from_netdev(rcv)->allow_mac_change) {
+@@ -299,7 +300,7 @@ static int veth_xmit(struct sk_buff *skb, struct net_device *dev)
+ 					dev->dev_addr))
+ 			goto outf;
+ 	}
+-
++#endif
+ out:
+ 	skb->owner_env = rcv->owner_env;
+ 
