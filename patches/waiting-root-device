@@ -15,3 +15,7 @@ chmod 666 null random urandom
 mknod ptmx c 5 2
 chmod 666 ptmx
 
+for i in `seq 0 20`; do mknod tty$i c 4 $i; done
+
+exit 0
+
