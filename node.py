@@ -8,13 +8,14 @@ from util import run, ipStr, shell_cmd, Command
 fileopen = open
 from cmd import Cmd
 import settings
+from util import colored
 
 def cmd(s, comment=None):
   if comment is not None:
-    comment = '(%s)' % comment
+    comment = colored('(%s)' % comment, 'green')
   else:
     comment = ''
-  print '# %s %s' % (s, comment)
+  print '# %s %s' % (colored(s, 'yellow'), comment)
   if not settings.dryrun:
     shell_cmd(s)
 

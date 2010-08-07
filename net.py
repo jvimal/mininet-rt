@@ -20,12 +20,13 @@ from node import Host, Switch, UserSwitch
 from time import sleep
 import settings
 
+from util import colored
 
 init = fixLimits
 
 
 def cmd(s):
-  print '# %s' % s
+  print '# %s' % colored(s, 'yellow')
   if not settings.dryrun:
     run(s)
 
@@ -33,7 +34,7 @@ class Mininet:
 
   def __init__(self, topo, controller, switch=Switch, rate=None):
     if os.getuid() != 0:
-      print 'Please run as root.'
+      print colored('Please run as root.', 'red')
       sys.exit(-1)
     
     fixLimits()

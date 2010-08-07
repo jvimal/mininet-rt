@@ -10,6 +10,11 @@ from log import lg
 def no_cores():
   return 2
 
+try:
+  from termcolor import colored
+except ImportError:
+  colored = lambda a: a
+
 class Command:
 
   def __init__(self, c):

@@ -8,7 +8,7 @@ import html
 import sys
 from time import sleep
 import getopt
-
+from termcolor import colored
 import settings as s
 from help import printhelp
 
@@ -30,8 +30,9 @@ def main():
     return
 
   if not s.dryrun:
+    prompt = colored('Without asking why, type 1 and RET when you want to stop: ', 'cyan')
     while True:
-      x = int(raw_input('Without asking why, ype 1 and RET when you want to stop: '))
+      x = int(raw_input(prompt))
       if x == 1:
         break
     
