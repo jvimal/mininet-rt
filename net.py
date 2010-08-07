@@ -204,6 +204,10 @@ class Mininet:
       sys.stdout.flush()
       n = int(shell_output('vzlist -a | egrep "running|mounted" | wc -l').strip())
       print '%d/%d' % (n, l)
+      if n > l:
+        print 'There seem to be extra hosts booted up; please check.'
+        print 'But I am continuing with other things...'
+        break
       if n == l:
         break
   
