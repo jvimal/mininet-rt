@@ -1,0 +1,17 @@
+# commands to be executed in /dev
+# cd /dev
+
+mknod sda b 8 0
+mknod sda1 b 8 1
+mknod sda2 b 8 2
+mknod sda3 b 8 3
+
+mknod null c 1 3
+mknod random c 1 8
+mknod urandom c 1 9
+
+chmod 666 null random urandom
+
+mknod ptmx c 5 2
+chmod 666 ptmx
+
