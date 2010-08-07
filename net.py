@@ -180,6 +180,15 @@ class Mininet:
     # later
     for ctid in xrange(1, len(self.hosts)+1):
       cmd("vzctl set %d --cpulimit %d" % (ctid, settings.cpulimit))
+    
+    # TODO: integrate switch cpu limit when calculating 
+    # sane_limit
+    if settings.cpulimit_switch is None:
+      return
+
+    for s in self.switches:
+      cmd("vzctl set %d --cpulimit %d" % (s.cid, settings.cpulimit_switch))
+
 
   def start(self):
     """ Boot up all the hosts """
