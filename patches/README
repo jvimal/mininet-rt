@@ -1,0 +1,3 @@
+git clone git://git.openvz.org/pub/linux-2.6.18-openvz
+cd linux-2.6.18-openvz
+patch -p1 < etunpatch-2.6.18-openvz.diff
