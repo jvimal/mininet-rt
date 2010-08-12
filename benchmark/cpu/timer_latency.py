@@ -24,7 +24,7 @@ def run_timer_test(t):
   return {'timer' : t, 'count' : count, 'latency' : latency }
 
 
-F = 10**5
+F = 10**4
 timers = map(lambda x: F * x, range(1,10+1))
 
 def timer_test(outfile):
@@ -48,6 +48,11 @@ def timer_test_parallel(outfile):
     # spawn 50 timers
     lst = pool.imap(run_timer_test, [t]*50)
     out.writerows(lst)
-    
-timer_test_parallel('test')
+ 
+
+outfile = 'test'
+if len(sys.argv) > 1:
+  outfile = sys.argv[1]
+
+timer_test_parallel(outfile)
 
