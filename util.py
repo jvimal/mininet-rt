@@ -18,6 +18,8 @@ except ImportError:
 class Command:
 
   def __init__(self, c):
+    if type(c) == type(''):
+      c = c.split(' ')
     self.cmd = c
     self.p = Popen(c, stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
