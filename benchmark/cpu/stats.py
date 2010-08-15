@@ -44,7 +44,7 @@ def stats(data):
     latencies = [float(r['latency']) for r in data if int(r['timer']) == t]
     latencies = map(lambda x: x / (t / MEG), latencies)
     
-    save_plot(latencies, t, "latency_%d" % t)
+    save_plot(latencies, t, "latency_%d.svg" % t)
 
     stat.update({ t : [
       ('count_min', numpy.min(counts)),

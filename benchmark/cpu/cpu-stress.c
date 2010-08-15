@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <time.h>
 
 typedef unsigned long long u64;
 typedef struct timeval mytime_t;
@@ -10,6 +11,8 @@ char asked = 0;
 u64 count = 0;
 
 mytime_t start, interval, end, asked_delta, got_delta, latency;
+
+clock_t start_vtime, end_vtime;
 
 mytime_t mk_time(long s, long us) {
   return (mytime_t){.tv_sec = s, .tv_usec = us};
@@ -26,18 +29,22 @@ mytime_t time_delta(mytime_t a, mytime_t b) {
 
 void sighandler(int _) {
   gettimeofday(&end, NULL);
+  end_vtime = clock();
+
   got_delta = time_delta(end, start);
   latency = time_delta(got_delta, asked_delta);
-
+  
   printf("%u\n", count);
 
 #define P(a) a.tv_sec, a.tv_usec
 
   if(asked) {
     printf("%d.%06d,%d.%06d,%d.%06d\n", P(asked_delta), P(got_delta), P(latency));
+    #define stderr stdout
     fprintf(stderr, "Asked delta: %d.%06d seconds\n", P(asked_delta));
     fprintf(stderr, "Got delta:   %d.%06d seconds\n", P(got_delta));
     fprintf(stderr, "Latency:     %d.%06d seconds\n", P(latency));
+    fprintf(stderr, "User elapsed:%0.06f seconds\n", (end_vtime - start_vtime) * 1.0/CLOCKS_PER_SEC);
   }
   exit(0);
 }
@@ -64,6 +71,7 @@ int main(int c, char *v[]) {
     gettimeofday(&start, NULL);
     setitimer(ITIMER_REAL, &itimer, NULL);
   }
+  start_vtime = clock();
   while(1) count++;
   return 0;
 }

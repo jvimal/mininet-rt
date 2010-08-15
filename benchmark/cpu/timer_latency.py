@@ -20,19 +20,20 @@ def run_timer_test(t):
   out = c.read_full().strip().split('\n')
 
   count = out[0]
-  ask, got, latency = out[1].split(',')
-  return {'timer' : t, 'count' : count, 'latency' : latency }
+  execute = out[5].split(':')[1].strip()
+  ask, got, latency, execute = out[1].split(',') + [execute]
+  return {'timer' : t, 'count' : count, 'latency' : latency, 'exectime' : execute }
 
 
 F = 10**4
 timers = map(lambda x: F * x, range(1,10+1))
 
 def timer_test(outfile):
-  fields = ['timer','count','latency']
+  fields = ['timer','count','latency','exectime']
   f = open(outfile,'w')
   out = csv.DictWriter(f, fieldnames=fields)
   for t in timers:
-    for i in xrange(0, 50):
+    for i in xrange(0, 100):
       row = run_timer_test(t)
       print `row`
       out.writerow(row)
@@ -40,7 +41,7 @@ def timer_test(outfile):
 
 def timer_test_parallel(outfile):
   f = open(outfile,'w')
-  fields = ['timer','count','latency']
+  fields = ['timer','count','latency', 'exectime']
   out = csv.DictWriter(f, fieldnames=fields)
   for t in timers:
     print 'Timer %d' % t

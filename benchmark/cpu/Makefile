@@ -2,6 +2,7 @@
 FILES=cpu-stress
 FILES+=gettimeofday
 FILES+=timer
+FILES+=steal_cpu
 
 all: $(FILES)
 	@echo done
