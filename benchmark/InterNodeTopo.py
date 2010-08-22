@@ -3,9 +3,6 @@
 """
 """
 
-import sys
-flush = sys.stdout.flush
-
 from mininet.topo import Topo, Node 
 
 class InterNodeTopo( Topo ):

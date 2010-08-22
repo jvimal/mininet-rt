@@ -5,14 +5,14 @@
 
 from mininet.topo import Topo, Node 
 
-class InterNodeTopo( Topo ):
+class IntraNodeTopo( Topo ):
     '''Topology for a group of hosts connected by a single switch.'''
 
     def __init__( self, N ):
         '''Constructor'''
 
         # Add default members to class.
-        super( InterNodeTopo, self ).__init__()
+        super( IntraNodeTopo, self ).__init__()
 
         # Create switch and host nodes
         hosts = range(1, 2*N + 1)
@@ -31,7 +31,7 @@ class InterNodeTopo( Topo ):
 if __name__ == '__main__':
     sizes = [ 1, 10, 20 ]
     for n in sizes:
-        print "*** Printing InterNodeTopo : size ", n
+        print "*** Printing IntraNodeTopo : size ", n
         topo = InterNodeTopo(n)
         print "Nodes: ", topo.nodes()
         print "Switches: ", topo.switches()

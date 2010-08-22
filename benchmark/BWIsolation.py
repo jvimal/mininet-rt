@@ -68,7 +68,8 @@ def usage():
 if __name__ == '__main__':
     if(len(sys.argv) != 2):
         usage()
-    sizes = [ 1 , 2, 3, 5, 10, 20, 40 ]
+    #sizes = [ 1, 2, 3, 5, 10, 20, 40 ]
+    sizes = [ 1, 2]
     trials = 3
     for bm in bmarkToTopo.keys():
         if(re.match(bm, sys.argv[1], re.I) is not None):
