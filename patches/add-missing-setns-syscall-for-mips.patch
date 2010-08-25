@@ -1,0 +1,10 @@
+Index: linux-2.6.35/arch/mips/kernel/scall64-n32.S
+===================================================================
+--- linux-2.6.35.orig/arch/mips/kernel/scall64-n32.S	2010-08-15 17:44:44.723500284 -0700
++++ linux-2.6.35/arch/mips/kernel/scall64-n32.S	2010-08-15 17:45:58.455394258 -0700
+@@ -420,4 +420,5 @@
+ 	PTR	sys_accept4
+ 	PTR     compat_sys_recvmmsg
+ 	PTR     sys_getdents
++	PTR     sys_setns
+ 	.size	sysn32_call_table,.-sysn32_call_table

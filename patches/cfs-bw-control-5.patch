@@ -1,0 +1,140 @@
+From: Nikhil Rao <ncrao@google.com>
+
+This change introduces statistics exports for the cpu sub-system, these are
+added through the use of a stat file similar to that exported by other
+subsystems.
+
+The following exports are included:
+
+nr_periods:	number of periods in which execution occurred
+nr_throttled:	the number of periods above in which execution was throttle
+throttled_time:	cumulative wall-time that any cpus have been throttled for
+this group
+
+Signed-off-by: Paul Turner <pjt@google.com>
+---
+ kernel/sched.c      |   26 ++++++++++++++++++++++++++
+ kernel/sched_fair.c |   19 ++++++++++++++++++-
+ 2 files changed, 44 insertions(+), 1 deletion(-)
+
+--- a/kernel/sched.c
++++ b/kernel/sched.c
+@@ -251,6 +251,11 @@ struct cfs_bandwidth {
+ 	ktime_t			period;
+ 	u64			runtime, quota;
+ 	struct hrtimer		period_timer;
++
++	/* throttle statistics */
++	u64			nr_periods;
++	u64			nr_throttled;
++	u64			throttled_time;
+ };
+ #endif
+ 
+@@ -387,6 +392,7 @@ struct cfs_rq {
+ #ifdef CONFIG_CFS_BANDWIDTH
+ 	u64 quota_assigned, quota_used;
+ 	int throttled;
++	u64 throttled_timestamp;
+ #endif
+ #endif
+ };
+@@ -424,6 +430,10 @@ void init_cfs_bandwidth(struct cfs_bandw
+ 
+ 	hrtimer_init(&cfs_b->period_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+ 	cfs_b->period_timer.function = sched_cfs_period_timer;
++
++	cfs_b->nr_periods = 0;
++	cfs_b->nr_throttled = 0;
++	cfs_b->throttled_time = 0;
+ }
+ 
+ static
+@@ -8820,6 +8830,18 @@ static int cpu_cfs_period_write_u64(stru
+ 	return tg_set_cfs_period(cgroup_tg(cgrp), cfs_period_us);
+ }
+ 
++static int cpu_stats_show(struct cgroup *cgrp, struct cftype *cft,
++		struct cgroup_map_cb *cb)
++{
++	struct task_group *tg = cgroup_tg(cgrp);
++	struct cfs_bandwidth *cfs_b = tg_cfs_bandwidth(tg);
++
++	cb->fill(cb, "nr_periods", cfs_b->nr_periods);
++	cb->fill(cb, "nr_throttled", cfs_b->nr_throttled);
++	cb->fill(cb, "throttled_time", cfs_b->throttled_time);
++
++	return 0;
++}
+ #endif /* CONFIG_CFS_BANDWIDTH */
+ #endif /* CONFIG_FAIR_GROUP_SCHED */
+ 
+@@ -8866,6 +8888,10 @@ static struct cftype cpu_files[] = {
+ 		.read_u64 = cpu_cfs_period_read_u64,
+ 		.write_u64 = cpu_cfs_period_write_u64,
+ 	},
++	{
++		.name = "stat",
++		.read_map = cpu_stats_show,
++	},
+ #endif
+ #ifdef CONFIG_RT_GROUP_SCHED
+ 	{
+--- a/kernel/sched_fair.c
++++ b/kernel/sched_fair.c
+@@ -1211,15 +1211,26 @@ static void throttle_cfs_rq(struct cfs_r
+ 			break;
+ 	}
+ 	cfs_rq->throttled = 1;
++	cfs_rq->throttled_timestamp = rq_of(cfs_rq)->clock;
+ }
+ 
+ static void unthrottle_cfs_rq(struct cfs_rq *cfs_rq)
+ {
+ 	struct sched_entity *se;
++	struct cfs_bandwidth *cfs_b = tg_cfs_bandwidth(cfs_rq->tg);
++	struct rq *rq = rq_of(cfs_rq);
+ 
+ 	se = cfs_rq->tg->se[cpu_of(rq_of(cfs_rq))];
+ 
++	/* update stats */
++	update_rq_clock(rq);
++	raw_spin_lock(&cfs_b->lock);
++	cfs_b->throttled_time += (rq->clock - cfs_rq->throttled_timestamp);
++	raw_spin_unlock(&cfs_b->lock);
++
+ 	cfs_rq->throttled = 0;
++	cfs_rq->throttled_timestamp = 0;
++
+ 	for_each_sched_entity(se) {
+ 		if (se->on_rq)
+ 			break;
+@@ -1253,7 +1264,7 @@ static void account_cfs_rq_quota(struct 
+ 
+ static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
+ {
+-	int i, idle = 1;
++	int i, idle = 1, num_throttled = 0;
+ 	u64 delta;
+ 	const struct cpumask *span;
+ 
+@@ -1275,6 +1286,7 @@ static int do_sched_cfs_period_timer(str
+ 
+ 		if (!cfs_rq_throttled(cfs_rq))
+ 			continue;
++		num_throttled++;
+ 
+ 		delta = tg_request_cfs_quota(cfs_rq->tg);
+ 
+@@ -1288,6 +1300,11 @@ static int do_sched_cfs_period_timer(str
+ 		}
+ 	}
+ 
++	/* update throttled stats */
++	cfs_b->nr_periods++;
++	if (num_throttled)
++		cfs_b->nr_throttled++;
++
+ 	return idle;
+ }
+ 

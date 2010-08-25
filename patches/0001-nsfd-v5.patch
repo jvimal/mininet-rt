@@ -18,7 +18,7 @@ git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-2.6.33-nsfd-v5.git
 0011-ns-proc-Add-support-for-the-ipc-namespace.patch
 0012-ns-proc-Add-support-for-the-mount-namespace.patch
 
-Signed-off-by: Cedric Le Goater <clg@fr.ibm.com>
+Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
 Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 ---
  arch/alpha/kernel/systbls.S               |    1 
@@ -65,10 +65,10 @@ Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
  41 files changed, 543 insertions(+), 76 deletions(-)
  create mode 100644 fs/proc/namespaces.c
 
-Index: linux-2.6.35/arch/alpha/kernel/systbls.S
+Index: linux-2.6.35-rc6/arch/alpha/kernel/systbls.S
 ===================================================================
---- linux-2.6.35.orig/arch/alpha/kernel/systbls.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/alpha/kernel/systbls.S	2010-08-03 16:40:55.534551725 -0700
+--- linux-2.6.35-rc6.orig/arch/alpha/kernel/systbls.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/alpha/kernel/systbls.S	2010-07-28 16:06:10.420451061 -0700
 @@ -512,6 +512,7 @@
  	.quad sys_pwritev
  	.quad sys_rt_tgsigqueueinfo
@@ -77,10 +77,10 @@ Index: linux-2.6.35/arch/alpha/kernel/systbls.S
  
  	.size sys_call_table, . - sys_call_table
  	.type sys_call_table, @object
-Index: linux-2.6.35/arch/arm/kernel/calls.S
+Index: linux-2.6.35-rc6/arch/arm/kernel/calls.S
 ===================================================================
---- linux-2.6.35.orig/arch/arm/kernel/calls.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/arm/kernel/calls.S	2010-08-03 16:40:55.534551725 -0700
+--- linux-2.6.35-rc6.orig/arch/arm/kernel/calls.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/arm/kernel/calls.S	2010-07-28 16:06:10.420451061 -0700
 @@ -375,6 +375,7 @@
  		CALL(sys_rt_tgsigqueueinfo)
  		CALL(sys_perf_event_open)
@@ -89,20 +89,20 @@ Index: linux-2.6.35/arch/arm/kernel/calls.S
  #ifndef syscalls_counted
  .equ syscalls_padding, ((NR_syscalls + 3) & ~3) - NR_syscalls
  #define syscalls_counted
-Index: linux-2.6.35/arch/avr32/kernel/syscall_table.S
+Index: linux-2.6.35-rc6/arch/avr32/kernel/syscall_table.S
 ===================================================================
---- linux-2.6.35.orig/arch/avr32/kernel/syscall_table.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/avr32/kernel/syscall_table.S	2010-08-03 16:40:55.534551725 -0700
+--- linux-2.6.35-rc6.orig/arch/avr32/kernel/syscall_table.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/avr32/kernel/syscall_table.S	2010-07-28 16:06:10.420451061 -0700
 @@ -296,4 +296,5 @@
  	.long	sys_ni_syscall		/* 280, was sys_timerfd */
  	.long	sys_eventfd
  	.long	sys_recvmmsg
 +	.long	sys_setns
  	.long	sys_ni_syscall		/* r8 is saturated at nr_syscalls */
-Index: linux-2.6.35/arch/blackfin/mach-common/entry.S
+Index: linux-2.6.35-rc6/arch/blackfin/mach-common/entry.S
 ===================================================================
---- linux-2.6.35.orig/arch/blackfin/mach-common/entry.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/blackfin/mach-common/entry.S	2010-08-03 16:40:55.534551725 -0700
+--- linux-2.6.35-rc6.orig/arch/blackfin/mach-common/entry.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/blackfin/mach-common/entry.S	2010-07-28 16:06:10.420451061 -0700
 @@ -1628,6 +1628,7 @@
  	.long _sys_rt_tgsigqueueinfo
  	.long _sys_perf_event_open
@@ -111,10 +111,10 @@ Index: linux-2.6.35/arch/blackfin/mach-common/entry.S
  
  	.rept NR_syscalls-(.-_sys_call_table)/4
  	.long _sys_ni_syscall
-Index: linux-2.6.35/arch/ia64/kernel/entry.S
+Index: linux-2.6.35-rc6/arch/ia64/kernel/entry.S
 ===================================================================
---- linux-2.6.35.orig/arch/ia64/kernel/entry.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/ia64/kernel/entry.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/ia64/kernel/entry.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/ia64/kernel/entry.S	2010-07-28 16:06:10.420451061 -0700
 @@ -1768,6 +1768,7 @@
  	data8 sys_pwritev			// 1320
  	data8 sys_rt_tgsigqueueinfo
@@ -123,19 +123,19 @@ Index: linux-2.6.35/arch/ia64/kernel/entry.S
  
  	.org sys_call_table + 8*NR_syscalls	// guard against failures to increase NR_syscalls
  #endif /* __IA64_ASM_PARAVIRTUALIZED_NATIVE */
-Index: linux-2.6.35/arch/microblaze/kernel/syscall_table.S
+Index: linux-2.6.35-rc6/arch/microblaze/kernel/syscall_table.S
 ===================================================================
---- linux-2.6.35.orig/arch/microblaze/kernel/syscall_table.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/microblaze/kernel/syscall_table.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/microblaze/kernel/syscall_table.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/microblaze/kernel/syscall_table.S	2010-07-28 16:06:10.420451061 -0700
 @@ -372,3 +372,4 @@
  	.long sys_rt_tgsigqueueinfo	/* 365 */
  	.long sys_perf_event_open
  	.long sys_recvmmsg
 +	.long sys_setns
-Index: linux-2.6.35/arch/mips/kernel/scall32-o32.S
+Index: linux-2.6.35-rc6/arch/mips/kernel/scall32-o32.S
 ===================================================================
---- linux-2.6.35.orig/arch/mips/kernel/scall32-o32.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/mips/kernel/scall32-o32.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/mips/kernel/scall32-o32.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/mips/kernel/scall32-o32.S	2010-07-28 16:06:10.420451061 -0700
 @@ -584,6 +584,7 @@
  	sys	sys_perf_event_open	5
  	sys	sys_accept4		4
@@ -144,40 +144,40 @@ Index: linux-2.6.35/arch/mips/kernel/scall32-o32.S
  	.endm
  
  	/* We pre-compute the number of _instruction_ bytes needed to
-Index: linux-2.6.35/arch/mips/kernel/scall64-64.S
+Index: linux-2.6.35-rc6/arch/mips/kernel/scall64-64.S
 ===================================================================
---- linux-2.6.35.orig/arch/mips/kernel/scall64-64.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/mips/kernel/scall64-64.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/mips/kernel/scall64-64.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/mips/kernel/scall64-64.S	2010-07-28 16:06:10.420451061 -0700
 @@ -421,4 +421,5 @@
  	PTR	sys_perf_event_open
  	PTR	sys_accept4
  	PTR     sys_recvmmsg
 +	PTR	sys_setns
  	.size	sys_call_table,.-sys_call_table
-Index: linux-2.6.35/arch/mips/kernel/scall64-n32.S
+Index: linux-2.6.35-rc6/arch/mips/kernel/scall64-n32.S
 ===================================================================
---- linux-2.6.35.orig/arch/mips/kernel/scall64-n32.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/mips/kernel/scall64-n32.S	2010-08-03 16:41:51.827169090 -0700
+--- linux-2.6.35-rc6.orig/arch/mips/kernel/scall64-n32.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/mips/kernel/scall64-n32.S	2010-07-28 16:06:10.420451061 -0700
 @@ -420,4 +420,5 @@
  	PTR	sys_accept4
  	PTR     compat_sys_recvmmsg
  	PTR     sys_getdents
 +	PTR	sys_setns
  	.size	sysn32_call_table,.-sysn32_call_table
-Index: linux-2.6.35/arch/mips/kernel/scall64-o32.S
+Index: linux-2.6.35-rc6/arch/mips/kernel/scall64-o32.S
 ===================================================================
---- linux-2.6.35.orig/arch/mips/kernel/scall64-o32.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/mips/kernel/scall64-o32.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/mips/kernel/scall64-o32.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/mips/kernel/scall64-o32.S	2010-07-28 16:06:10.420451061 -0700
 @@ -539,4 +539,5 @@
  	PTR	sys_perf_event_open
  	PTR	sys_accept4
  	PTR     compat_sys_recvmmsg
 +	PTR	sys_setns
  	.size	sys_call_table,.-sys_call_table
-Index: linux-2.6.35/arch/powerpc/platforms/cell/spufs/sched.c
+Index: linux-2.6.35-rc6/arch/powerpc/platforms/cell/spufs/sched.c
 ===================================================================
---- linux-2.6.35.orig/arch/powerpc/platforms/cell/spufs/sched.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/powerpc/platforms/cell/spufs/sched.c	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/powerpc/platforms/cell/spufs/sched.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/powerpc/platforms/cell/spufs/sched.c	2010-07-28 16:06:10.420451061 -0700
 @@ -1095,7 +1095,7 @@
  		LOAD_INT(c), LOAD_FRAC(c),
  		count_active_contexts(),
@@ -187,19 +187,19 @@ Index: linux-2.6.35/arch/powerpc/platforms/cell/spufs/sched.c
  	return 0;
  }
  
-Index: linux-2.6.35/arch/sh/kernel/syscalls_64.S
+Index: linux-2.6.35-rc6/arch/sh/kernel/syscalls_64.S
 ===================================================================
---- linux-2.6.35.orig/arch/sh/kernel/syscalls_64.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/sh/kernel/syscalls_64.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/sh/kernel/syscalls_64.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/sh/kernel/syscalls_64.S	2010-07-28 16:06:10.420451061 -0700
 @@ -393,3 +393,4 @@
  	.long sys_perf_event_open
  	.long sys_recvmmsg		/* 365 */
  	.long sys_accept4
 +	.long sys_setns
-Index: linux-2.6.35/arch/sparc/kernel/systbls_32.S
+Index: linux-2.6.35-rc6/arch/sparc/kernel/systbls_32.S
 ===================================================================
---- linux-2.6.35.orig/arch/sparc/kernel/systbls_32.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/sparc/kernel/systbls_32.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/sparc/kernel/systbls_32.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/sparc/kernel/systbls_32.S	2010-07-28 16:06:10.420451061 -0700
 @@ -82,5 +82,5 @@
  /*310*/	.long sys_utimensat, sys_signalfd, sys_timerfd_create, sys_eventfd, sys_fallocate
  /*315*/	.long sys_timerfd_settime, sys_timerfd_gettime, sys_signalfd4, sys_eventfd2, sys_epoll_create1
@@ -207,10 +207,10 @@ Index: linux-2.6.35/arch/sparc/kernel/systbls_32.S
 -/*325*/	.long sys_pwritev, sys_rt_tgsigqueueinfo, sys_perf_event_open, sys_recvmmsg
 +/*325*/	.long sys_pwritev, sys_rt_tgsigqueueinfo, sys_perf_event_open, sys_recvmmsg, sys_setns
  
-Index: linux-2.6.35/arch/sparc/kernel/systbls_64.S
+Index: linux-2.6.35-rc6/arch/sparc/kernel/systbls_64.S
 ===================================================================
---- linux-2.6.35.orig/arch/sparc/kernel/systbls_64.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/sparc/kernel/systbls_64.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/sparc/kernel/systbls_64.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/sparc/kernel/systbls_64.S	2010-07-28 16:06:10.420451061 -0700
 @@ -83,7 +83,7 @@
  /*310*/	.word compat_sys_utimensat, compat_sys_signalfd, sys_timerfd_create, sys_eventfd, compat_sys_fallocate
  	.word compat_sys_timerfd_settime, compat_sys_timerfd_gettime, compat_sys_signalfd4, sys_eventfd2, sys_epoll_create1
@@ -226,10 +226,10 @@ Index: linux-2.6.35/arch/sparc/kernel/systbls_64.S
  /*320*/	.word sys_dup3, sys_pipe2, sys_inotify_init1, sys_accept4, sys_preadv
 -	.word sys_pwritev, sys_rt_tgsigqueueinfo, sys_perf_event_open, sys_recvmmsg
 +	.word sys_pwritev, sys_rt_tgsigqueueinfo, sys_perf_event_open, sys_recvmmsg, sys_setns
-Index: linux-2.6.35/arch/um/drivers/mconsole_kern.c
+Index: linux-2.6.35-rc6/arch/um/drivers/mconsole_kern.c
 ===================================================================
---- linux-2.6.35.orig/arch/um/drivers/mconsole_kern.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/um/drivers/mconsole_kern.c	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/um/drivers/mconsole_kern.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/um/drivers/mconsole_kern.c	2010-07-28 16:06:10.420451061 -0700
 @@ -125,7 +125,7 @@
  void mconsole_proc(struct mc_request *req)
  {
@@ -239,20 +239,20 @@ Index: linux-2.6.35/arch/um/drivers/mconsole_kern.c
  	struct file *file;
  	int n, err;
  	char *ptr = req->request.data, *buf;
-Index: linux-2.6.35/arch/x86/ia32/ia32entry.S
+Index: linux-2.6.35-rc6/arch/x86/ia32/ia32entry.S
 ===================================================================
---- linux-2.6.35.orig/arch/x86/ia32/ia32entry.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/x86/ia32/ia32entry.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/x86/ia32/ia32entry.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/x86/ia32/ia32entry.S	2010-07-28 16:06:10.420451061 -0700
 @@ -842,4 +842,5 @@
  	.quad compat_sys_rt_tgsigqueueinfo	/* 335 */
  	.quad sys_perf_event_open
  	.quad compat_sys_recvmmsg
 +	.quad sys_setns
  ia32_syscall_end:
-Index: linux-2.6.35/arch/x86/include/asm/unistd_32.h
+Index: linux-2.6.35-rc6/arch/x86/include/asm/unistd_32.h
 ===================================================================
---- linux-2.6.35.orig/arch/x86/include/asm/unistd_32.h	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/x86/include/asm/unistd_32.h	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/x86/include/asm/unistd_32.h	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/x86/include/asm/unistd_32.h	2010-07-28 16:06:10.420451061 -0700
 @@ -343,10 +343,11 @@
  #define __NR_rt_tgsigqueueinfo	335
  #define __NR_perf_event_open	336
@@ -266,10 +266,10 @@ Index: linux-2.6.35/arch/x86/include/asm/unistd_32.h
  
  #define __ARCH_WANT_IPC_PARSE_VERSION
  #define __ARCH_WANT_OLD_READDIR
-Index: linux-2.6.35/arch/x86/include/asm/unistd_64.h
+Index: linux-2.6.35-rc6/arch/x86/include/asm/unistd_64.h
 ===================================================================
---- linux-2.6.35.orig/arch/x86/include/asm/unistd_64.h	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/x86/include/asm/unistd_64.h	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/x86/include/asm/unistd_64.h	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/x86/include/asm/unistd_64.h	2010-07-28 16:06:10.420451061 -0700
 @@ -663,6 +663,8 @@
  __SYSCALL(__NR_perf_event_open, sys_perf_event_open)
  #define __NR_recvmmsg				299
@@ -279,19 +279,19 @@ Index: linux-2.6.35/arch/x86/include/asm/unistd_64.h
  
  #ifndef __NO_STUBS
  #define __ARCH_WANT_OLD_READDIR
-Index: linux-2.6.35/arch/x86/kernel/syscall_table_32.S
+Index: linux-2.6.35-rc6/arch/x86/kernel/syscall_table_32.S
 ===================================================================
---- linux-2.6.35.orig/arch/x86/kernel/syscall_table_32.S	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/x86/kernel/syscall_table_32.S	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/x86/kernel/syscall_table_32.S	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/x86/kernel/syscall_table_32.S	2010-07-28 16:06:10.420451061 -0700
 @@ -337,3 +337,4 @@
  	.long sys_rt_tgsigqueueinfo	/* 335 */
  	.long sys_perf_event_open
  	.long sys_recvmmsg
 +	.long sys_setns
-Index: linux-2.6.35/arch/xtensa/include/asm/unistd.h
+Index: linux-2.6.35-rc6/arch/xtensa/include/asm/unistd.h
 ===================================================================
---- linux-2.6.35.orig/arch/xtensa/include/asm/unistd.h	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/arch/xtensa/include/asm/unistd.h	2010-08-03 16:40:55.624923258 -0700
+--- linux-2.6.35-rc6.orig/arch/xtensa/include/asm/unistd.h	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/arch/xtensa/include/asm/unistd.h	2010-07-28 16:06:10.420451061 -0700
 @@ -683,8 +683,10 @@
  __SYSCALL(306, sys_eventfd, 1)
  #define __NR_recvmmsg				307
@@ -304,10 +304,10 @@ Index: linux-2.6.35/arch/xtensa/include/asm/unistd.h
  
  /*
   * sysxtensa syscall handler
-Index: linux-2.6.35/fs/namespace.c
+Index: linux-2.6.35-rc6/fs/namespace.c
 ===================================================================
---- linux-2.6.35.orig/fs/namespace.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/fs/namespace.c	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/fs/namespace.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/fs/namespace.c	2010-07-28 16:06:10.420451061 -0700
 @@ -29,6 +29,7 @@
  #include <linux/log2.h>
  #include <linux/idr.h>
@@ -376,10 +376,10 @@ Index: linux-2.6.35/fs/namespace.c
 +	.install	= mntns_install,
 +};
 +
-Index: linux-2.6.35/fs/proc/Makefile
+Index: linux-2.6.35-rc6/fs/proc/Makefile
 ===================================================================
---- linux-2.6.35.orig/fs/proc/Makefile	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/fs/proc/Makefile	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/fs/proc/Makefile	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/fs/proc/Makefile	2010-07-28 16:06:10.420451061 -0700
 @@ -19,6 +19,7 @@
  proc-y	+= uptime.o
  proc-y	+= version.o
@@ -388,10 +388,10 @@ Index: linux-2.6.35/fs/proc/Makefile
  proc-$(CONFIG_PROC_SYSCTL)	+= proc_sysctl.o
  proc-$(CONFIG_NET)		+= proc_net.o
  proc-$(CONFIG_PROC_KCORE)	+= kcore.o
-Index: linux-2.6.35/fs/proc/base.c
+Index: linux-2.6.35-rc6/fs/proc/base.c
 ===================================================================
---- linux-2.6.35.orig/fs/proc/base.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/fs/proc/base.c	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/fs/proc/base.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/fs/proc/base.c	2010-07-28 16:06:10.430450661 -0700
 @@ -552,7 +552,7 @@
  	return allowed;
  }
@@ -480,14 +480,14 @@ Index: linux-2.6.35/fs/proc/base.c
  static const struct pid_entry tid_base_stuff[] = {
  	DIR("fd",        S_IRUSR|S_IXUSR, proc_fd_inode_operations, proc_fd_operations),
  	DIR("fdinfo",    S_IRUSR|S_IXUSR, proc_fdinfo_inode_operations, proc_fdinfo_operations),
-+	DIR("ns",	 S_IRUSR|S_IXUGO, proc_ns_dir_inode_operations, proc_ns_dir_operations),
++	DIR("ns",        S_IRUSR|S_IXUGO, proc_ns_dir_inode_operations, proc_ns_dir_operations),
  	REG("environ",   S_IRUSR, proc_environ_operations),
  	INF("auxv",      S_IRUSR, proc_pid_auxv),
  	ONE("status",    S_IRUGO, proc_pid_status),
-Index: linux-2.6.35/fs/proc/inode.c
+Index: linux-2.6.35-rc6/fs/proc/inode.c
 ===================================================================
---- linux-2.6.35.orig/fs/proc/inode.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/fs/proc/inode.c	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/fs/proc/inode.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/fs/proc/inode.c	2010-07-28 16:06:10.430450661 -0700
 @@ -28,6 +28,7 @@
  static void proc_delete_inode(struct inode *inode)
  {
@@ -516,10 +516,10 @@ Index: linux-2.6.35/fs/proc/inode.c
  	inode = &ei->vfs_inode;
  	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
  	return inode;
-Index: linux-2.6.35/fs/proc/internal.h
+Index: linux-2.6.35-rc6/fs/proc/internal.h
 ===================================================================
---- linux-2.6.35.orig/fs/proc/internal.h	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/fs/proc/internal.h	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/fs/proc/internal.h	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/fs/proc/internal.h	2010-07-28 16:06:10.430450661 -0700
 @@ -119,3 +119,21 @@
   */
  int proc_readdir(struct file *, void *, filldir_t);
@@ -542,10 +542,10 @@ Index: linux-2.6.35/fs/proc/internal.h
 +extern const struct inode_operations proc_ns_dir_inode_operations;
 +extern const struct file_operations proc_ns_dir_operations;
 +
-Index: linux-2.6.35/fs/proc/namespaces.c
+Index: linux-2.6.35-rc6/fs/proc/namespaces.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.35/fs/proc/namespaces.c	2010-08-03 16:40:55.637625497 -0700
++++ linux-2.6.35-rc6/fs/proc/namespaces.c	2010-07-28 16:06:10.430450661 -0700
 @@ -0,0 +1,196 @@
 +#include <linux/proc_fs.h>
 +#include <linux/nsproxy.h>
@@ -743,10 +743,10 @@ Index: linux-2.6.35/fs/proc/namespaces.c
 +	return ERR_PTR(-EINVAL);
 +}
 +
-Index: linux-2.6.35/fs/proc/root.c
+Index: linux-2.6.35-rc6/fs/proc/root.c
 ===================================================================
---- linux-2.6.35.orig/fs/proc/root.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/fs/proc/root.c	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/fs/proc/root.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/fs/proc/root.c	2010-07-28 16:06:10.430450661 -0700
 @@ -43,21 +43,10 @@
  	struct pid_namespace *ns;
  	struct proc_inode *ei;
@@ -796,10 +796,10 @@ Index: linux-2.6.35/fs/proc/root.c
  	simple_set_mnt(mnt, sb);
  	return 0;
  }
-Index: linux-2.6.35/include/linux/pid_namespace.h
+Index: linux-2.6.35-rc6/include/linux/pid_namespace.h
 ===================================================================
---- linux-2.6.35.orig/include/linux/pid_namespace.h	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/include/linux/pid_namespace.h	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/include/linux/pid_namespace.h	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/include/linux/pid_namespace.h	2010-07-28 16:06:10.430450661 -0700
 @@ -20,6 +20,7 @@
  	struct kref kref;
  	struct pidmap pidmap[PIDMAP_ENTRIES];
@@ -835,10 +835,10 @@ Index: linux-2.6.35/include/linux/pid_namespace.h
  }
  
  static inline void put_pid_ns(struct pid_namespace *ns)
-Index: linux-2.6.35/include/linux/proc_fs.h
+Index: linux-2.6.35-rc6/include/linux/proc_fs.h
 ===================================================================
---- linux-2.6.35.orig/include/linux/proc_fs.h	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/include/linux/proc_fs.h	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/include/linux/proc_fs.h	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/include/linux/proc_fs.h	2010-07-28 16:06:10.430450661 -0700
 @@ -250,6 +250,25 @@
  extern void kclist_add(struct kcore_list *, void *, size_t, int type);
  #endif
@@ -874,10 +874,10 @@ Index: linux-2.6.35/include/linux/proc_fs.h
  	struct inode vfs_inode;
  };
  
-Index: linux-2.6.35/init/main.c
+Index: linux-2.6.35-rc6/init/main.c
 ===================================================================
---- linux-2.6.35.orig/init/main.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/init/main.c	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/init/main.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/init/main.c	2010-07-28 16:06:10.430450661 -0700
 @@ -879,15 +879,6 @@
  	 * init can run on any cpu.
  	 */
@@ -894,10 +894,10 @@ Index: linux-2.6.35/init/main.c
  
  	cad_pid = task_pid(current);
  
-Index: linux-2.6.35/ipc/namespace.c
+Index: linux-2.6.35-rc6/ipc/namespace.c
 ===================================================================
---- linux-2.6.35.orig/ipc/namespace.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/ipc/namespace.c	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/ipc/namespace.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/ipc/namespace.c	2010-07-28 16:06:10.430450661 -0700
 @@ -11,6 +11,7 @@
  #include <linux/slab.h>
  #include <linux/fs.h>
@@ -940,10 +940,10 @@ Index: linux-2.6.35/ipc/namespace.c
 +	.put		= ipcns_put,
 +	.install	= ipcns_install,
 +};
-Index: linux-2.6.35/kernel/cgroup.c
+Index: linux-2.6.35-rc6/kernel/cgroup.c
 ===================================================================
---- linux-2.6.35.orig/kernel/cgroup.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/kernel/cgroup.c	2010-08-03 16:40:55.637625497 -0700
+--- linux-2.6.35-rc6.orig/kernel/cgroup.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/kernel/cgroup.c	2010-07-28 16:06:10.430450661 -0700
 @@ -2650,7 +2650,7 @@
  {
  	struct cgroup_pidlist *l;
@@ -953,10 +953,10 @@ Index: linux-2.6.35/kernel/cgroup.c
  
  	/*
  	 * We can't drop the pidlist_mutex before taking the l->mutex in case
-Index: linux-2.6.35/kernel/fork.c
+Index: linux-2.6.35-rc6/kernel/fork.c
 ===================================================================
---- linux-2.6.35.orig/kernel/fork.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/kernel/fork.c	2010-08-03 16:40:55.644559010 -0700
+--- linux-2.6.35-rc6.orig/kernel/fork.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/kernel/fork.c	2010-07-28 16:06:10.430450661 -0700
 @@ -1154,12 +1154,6 @@
  		pid = alloc_pid(p->nsproxy->pid_ns);
  		if (!pid)
@@ -989,10 +989,10 @@ Index: linux-2.6.35/kernel/fork.c
  		goto bad_unshare_out;
  
  	/*
-Index: linux-2.6.35/kernel/nsproxy.c
+Index: linux-2.6.35-rc6/kernel/nsproxy.c
 ===================================================================
---- linux-2.6.35.orig/kernel/nsproxy.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/kernel/nsproxy.c	2010-08-03 16:40:55.644559010 -0700
+--- linux-2.6.35-rc6.orig/kernel/nsproxy.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/kernel/nsproxy.c	2010-07-28 16:06:10.430450661 -0700
 @@ -22,6 +22,9 @@
  #include <linux/pid_namespace.h>
  #include <net/net_namespace.h>
@@ -1065,10 +1065,10 @@ Index: linux-2.6.35/kernel/nsproxy.c
  static int __init nsproxy_cache_init(void)
  {
  	nsproxy_cachep = KMEM_CACHE(nsproxy, SLAB_PANIC);
-Index: linux-2.6.35/kernel/perf_event.c
+Index: linux-2.6.35-rc6/kernel/perf_event.c
 ===================================================================
---- linux-2.6.35.orig/kernel/perf_event.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/kernel/perf_event.c	2010-08-03 16:40:55.669610546 -0700
+--- linux-2.6.35-rc6.orig/kernel/perf_event.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/kernel/perf_event.c	2010-07-28 16:06:10.430450661 -0700
 @@ -4843,7 +4843,7 @@
  
  	event->parent		= parent_event;
@@ -1078,10 +1078,10 @@ Index: linux-2.6.35/kernel/perf_event.c
  	event->id		= atomic64_inc_return(&perf_event_id);
  
  	event->state		= PERF_EVENT_STATE_INACTIVE;
-Index: linux-2.6.35/kernel/pid.c
+Index: linux-2.6.35-rc6/kernel/pid.c
 ===================================================================
---- linux-2.6.35.orig/kernel/pid.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/kernel/pid.c	2010-08-03 16:40:55.669610546 -0700
+--- linux-2.6.35-rc6.orig/kernel/pid.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/kernel/pid.c	2010-07-28 16:06:10.430450661 -0700
 @@ -248,6 +248,10 @@
  	struct pid_namespace *tmp;
  	struct upid *upid;
@@ -1129,18 +1129,18 @@ Index: linux-2.6.35/kernel/pid.c
  	if (likely(pid_alive(task))) {
  		if (type != PIDTYPE_PID)
  			task = task->group_leader;
-Index: linux-2.6.35/kernel/pid_namespace.c
+Index: linux-2.6.35-rc6/kernel/pid_namespace.c
 ===================================================================
---- linux-2.6.35.orig/kernel/pid_namespace.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/kernel/pid_namespace.c	2010-08-03 16:40:55.669610546 -0700
-@@ -14,6 +14,7 @@
+--- linux-2.6.35-rc6.orig/kernel/pid_namespace.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/kernel/pid_namespace.c	2010-07-28 16:06:10.430450661 -0700
+@@ -13,6 +13,7 @@
+ #include <linux/syscalls.h>
  #include <linux/err.h>
  #include <linux/acct.h>
- #include <linux/slab.h>
 +#include <linux/proc_fs.h>
+ #include <linux/slab.h>
  
  #define BITS_PER_PAGE		(PAGE_SIZE*8)
- 
 @@ -89,6 +90,7 @@
  	kref_init(&ns->kref);
  	ns->level = level;
@@ -1220,10 +1220,10 @@ Index: linux-2.6.35/kernel/pid_namespace.c
  static __init int pid_namespaces_init(void)
  {
  	pid_ns_cachep = KMEM_CACHE(pid_namespace, SLAB_PANIC);
-Index: linux-2.6.35/kernel/signal.c
+Index: linux-2.6.35-rc6/kernel/signal.c
 ===================================================================
---- linux-2.6.35.orig/kernel/signal.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/kernel/signal.c	2010-08-03 16:40:55.669610546 -0700
+--- linux-2.6.35-rc6.orig/kernel/signal.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/kernel/signal.c	2010-07-28 16:06:10.430450661 -0700
 @@ -1458,16 +1458,15 @@
  	 * we are under tasklist_lock here so our parent is tied to
  	 * us and cannot exit and release its namespace.
@@ -1253,10 +1253,10 @@ Index: linux-2.6.35/kernel/signal.c
  	info.si_uid = __task_cred(tsk)->uid;
  	rcu_read_unlock();
  
-Index: linux-2.6.35/kernel/sysctl_binary.c
+Index: linux-2.6.35-rc6/kernel/sysctl_binary.c
 ===================================================================
---- linux-2.6.35.orig/kernel/sysctl_binary.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/kernel/sysctl_binary.c	2010-08-03 16:40:55.669610546 -0700
+--- linux-2.6.35-rc6.orig/kernel/sysctl_binary.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/kernel/sysctl_binary.c	2010-07-28 16:06:10.430450661 -0700
 @@ -1350,7 +1350,7 @@
  		goto out_putname;
  	}
@@ -1266,10 +1266,10 @@ Index: linux-2.6.35/kernel/sysctl_binary.c
  	result = vfs_path_lookup(mnt->mnt_root, mnt, pathname, 0, &nd);
  	if (result)
  		goto out_putname;
-Index: linux-2.6.35/kernel/utsname.c
+Index: linux-2.6.35-rc6/kernel/utsname.c
 ===================================================================
---- linux-2.6.35.orig/kernel/utsname.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/kernel/utsname.c	2010-08-03 16:40:55.669610546 -0700
+--- linux-2.6.35-rc6.orig/kernel/utsname.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/kernel/utsname.c	2010-07-28 16:06:10.430450661 -0700
 @@ -14,6 +14,7 @@
  #include <linux/utsname.h>
  #include <linux/err.h>
@@ -1313,10 +1313,10 @@ Index: linux-2.6.35/kernel/utsname.c
 +	.install	= utsns_install,
 +};
 +
-Index: linux-2.6.35/net/core/net_namespace.c
+Index: linux-2.6.35-rc6/net/core/net_namespace.c
 ===================================================================
---- linux-2.6.35.orig/net/core/net_namespace.c	2010-08-01 15:11:14.000000000 -0700
-+++ linux-2.6.35/net/core/net_namespace.c	2010-08-03 16:40:55.669610546 -0700
+--- linux-2.6.35-rc6.orig/net/core/net_namespace.c	2010-07-22 12:13:38.000000000 -0700
++++ linux-2.6.35-rc6/net/core/net_namespace.c	2010-07-28 16:06:47.380462171 -0700
 @@ -571,3 +571,33 @@
  	mutex_unlock(&net_mutex);
  }

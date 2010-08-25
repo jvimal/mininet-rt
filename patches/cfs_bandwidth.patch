@@ -1,0 +1,108 @@
+Index: linux-2.6.35/kernel/sched.c
+===================================================================
+--- linux-2.6.35.orig/kernel/sched.c	2010-08-24 14:55:39.078006002 -0700
++++ linux-2.6.35/kernel/sched.c	2010-08-25 01:43:07.066804814 -0700
+@@ -248,9 +248,10 @@
+ #ifdef CONFIG_CFS_BANDWIDTH
+ struct cfs_bandwidth {
+ 	raw_spinlock_t		lock;
+-	ktime_t			period;
+-	u64			runtime, quota;
++	ktime_t			quota_time;
++	u64			quota, runtime, period;
+ 	struct hrtimer		period_timer;
++	u64			remainder;
+ 
+ 	/* throttle statistics */
+ 	u64			nr_periods;
+@@ -410,7 +411,7 @@
+ 
+ 	for (;;) {
+ 		now = hrtimer_cb_get_time(timer);
+-		overrun = hrtimer_forward(timer, now, cfs_b->period);
++		overrun = hrtimer_forward(timer, now, cfs_b->quota_time);
+ 
+ 		if (!overrun)
+ 			break;
+@@ -425,8 +426,14 @@
+ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b, u64 quota, u64 period)
+ {
+ 	raw_spin_lock_init(&cfs_b->lock);
+-	cfs_b->quota = cfs_b->runtime = quota;
+-	cfs_b->period = ns_to_ktime(period);
++	cfs_b->quota = quota;
++	if(quota == RUNTIME_INF)
++		cfs_b->quota_time = ns_to_ktime(period);
++	else
++		cfs_b->quota_time = ns_to_ktime(quota);
++	cfs_b->runtime = quota;
++	cfs_b->period = period;
++	cfs_b->remainder = 0;
+ 
+ 	hrtimer_init(&cfs_b->period_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+ 	cfs_b->period_timer.function = sched_cfs_period_timer;
+@@ -455,7 +462,7 @@
+ 		return;
+ 
+ 	raw_spin_lock(&cfs_b->lock);
+-	start_bandwidth_timer(&cfs_b->period_timer, cfs_b->period);
++	start_bandwidth_timer(&cfs_b->period_timer, cfs_b->quota_time);
+ 	raw_spin_unlock(&cfs_b->lock);
+ }
+ 
+@@ -8745,8 +8752,14 @@
+ 
+ 	mutex_lock(&mutex);
+ 	raw_spin_lock_irq(&tg->cfs_bandwidth.lock);
+-	tg->cfs_bandwidth.period = ns_to_ktime(period);
+-	tg->cfs_bandwidth.runtime = tg->cfs_bandwidth.quota = quota;
++	tg->cfs_bandwidth.period = period;
++	tg->cfs_bandwidth.quota = quota;
++	if(quota == RUNTIME_INF)
++		tg->cfs_bandwidth.quota_time = ns_to_ktime(period);
++	else
++		tg->cfs_bandwidth.quota_time = ns_to_ktime(quota);
++	tg->cfs_bandwidth.runtime = quota;
++	tg->cfs_bandwidth.remainder = 0;
+ 	raw_spin_unlock_irq(&tg->cfs_bandwidth.lock);
+ 
+ 	for_each_possible_cpu(i) {
+@@ -8768,7 +8781,7 @@
+ {
+ 	u64 quota, period;
+ 
+-	period = ktime_to_ns(tg->cfs_bandwidth.period);
++	period = tg->cfs_bandwidth.period;
+ 	if (cfs_runtime_us < 0)
+ 		quota = RUNTIME_INF;
+ 	else
+@@ -8806,7 +8819,7 @@
+ {
+ 	u64 cfs_period_us;
+ 
+-	cfs_period_us = ktime_to_ns(tg->cfs_bandwidth.period);
++	cfs_period_us = tg->cfs_bandwidth.period;
+ 	do_div(cfs_period_us, NSEC_PER_USEC);
+ 	return cfs_period_us;
+ }
+Index: linux-2.6.35/kernel/sched_fair.c
+===================================================================
+--- linux-2.6.35.orig/kernel/sched_fair.c	2010-08-24 14:55:39.088006002 -0700
++++ linux-2.6.35/kernel/sched_fair.c	2010-08-25 01:51:53.736804820 -0700
+@@ -1315,7 +1315,15 @@
+ 
+ 	/* reset group quota */
+ 	raw_spin_lock(&cfs_b->lock);
+-	cfs_b->runtime = cfs_b->quota;
++	if(cfs_b->quota == RUNTIME_INF)
++		cfs_b->remainder = cfs_b->period;
++	else
++		cfs_b->remainder += cfs_b->quota;
++
++	if(cfs_b->remainder >= cfs_b->period) {
++		cfs_b->runtime = cfs_b->quota;
++		cfs_b->remainder -= cfs_b->period;
++	}
+ 	raw_spin_unlock(&cfs_b->lock);
+ 
+ 	span = sched_bw_period_mask();
