@@ -39,7 +39,11 @@ void sighandler(int _) {
 #define P(a) a.tv_sec, a.tv_usec
 
   if(asked) {
-    printf("%d.%06d,%d.%06d,%d.%06d\n", P(asked_delta), P(got_delta), P(latency));
+    printf("%d.%06d,%d.%06d,%d.%06d,%0.06f\n", 
+        P(asked_delta), 
+        P(got_delta), 
+        P(latency),
+        (end_vtime - start_vtime) * 1.0/CLOCKS_PER_SEC);
     #define stderr stdout
     fprintf(stderr, "Asked delta: %d.%06d seconds\n", P(asked_delta));
     fprintf(stderr, "Got delta:   %d.%06d seconds\n", P(got_delta));

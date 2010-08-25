@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 """
+Tests a combination of CPU and BW isolation.
 """
 
 import sys
